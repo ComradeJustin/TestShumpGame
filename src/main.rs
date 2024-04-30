@@ -2,7 +2,7 @@ use bevy::{app::{App, PluginGroup, Startup, Update}, asset::Assets, core_pipelin
 use Physics::{PlayerhitboxComp, Shotcounter};
 
 
-
+mod Events;
 mod Physics;
 mod Ui;
 
@@ -28,7 +28,7 @@ fn main() {
                  ..Default::default()}).set(ImagePlugin::default_nearest()))
 
                  
-        .add_systems(Startup, (camera,testui,Physics::spawnplayer, setup)) // Runs on startup
+        .add_systems(Startup, (camera,testui,Physics::spawnplayer, setup, Ui::render_title_screen)) // Runs on startup
         .add_systems(Update, (Physics::input,Physics::physloop, Physics::guntimer, Physics::devmode))// Runs every frame
         .init_resource::<Shotcounter>().run(); // Runs the app
 
@@ -42,6 +42,10 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>,mut materials:
     commands.entity(x).insert(PlayerhitboxComp);
 
 }
+
+
+
+
 
 
 
