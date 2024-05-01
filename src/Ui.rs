@@ -74,7 +74,7 @@ pub fn render_title_screen(mut command: Commands, asset_server: Res<AssetServer>
                                  {
                                     font_size: 15.,
                                     color: Color::rgb(0.,0.,0.),
-                                    font: asset_server.load(r#"assets\fonts\font.ttf"#),
+                                    font: asset_server.load(r#"fonts\font.ttf"#),
 
 
 
