@@ -29,7 +29,7 @@ fn main() {
 
                  
         .add_systems(Startup, (camera,testui,Physics::spawnplayer, setup, Ui::render_title_screen)) // Runs on startup
-        .add_systems(Update, (Physics::input,Physics::physloop, Physics::guntimer, Physics::devmode))// Runs every frame
+        .add_systems(Update, ( Physics::input,Physics::physloop, Physics::guntimer, Physics::devmode))// Runs every frame
         .init_resource::<Shotcounter>().run(); // Runs the app
 
 
@@ -66,17 +66,17 @@ fn testui( mut commands: Commands){ // Spawns a test ui
     });
 }
 fn camera(mut commands: Commands){
-   
+
     commands.spawn((
         Camera2dBundle {
             camera: bevy::render::camera::Camera {
-                hdr: true, // 1. HDR is required for bloom
+
                 ..default()
             },
-            tonemapping: bevy::core_pipeline::tonemapping::Tonemapping::TonyMcMapface, // 2. Using a tonemapper that desaturates to white is recommended
+         
             ..default()
         },
-        BloomSettings::OLD_SCHOOL, // 3. Enable bloom for the camera
+
     ));
    
 }
