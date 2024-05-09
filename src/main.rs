@@ -1,4 +1,5 @@
-use bevy::{app::{App, PluginGroup, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{entity::Entity, query::With, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
+use bevy::{app::{App, First, PluginGroup, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{entity::Entity, query::With, schedule::{IntoSystemSetConfigs, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
+use Events::gamestatecheck;
 use Physics::{PlayerhitboxComp, Shotcounter};
 
 
@@ -8,7 +9,8 @@ mod Ui;
 
 
 
-
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+struct PlayerControls;
 fn main() {
 
     App::new()
@@ -28,11 +30,14 @@ fn main() {
                  ..Default::default()}).set(ImagePlugin::default_nearest()))
 
                  
-        .add_systems(Startup, (camera,testui,Physics::spawnplayer, setup, Ui::render_title_screen)) // Runs on startup
-        .add_systems(Update, ( Physics::input,Physics::physloop, Physics::guntimer, Physics::devmode))// Runs every frame
-        .init_resource::<Shotcounter>().run(); // Runs the app
+        .add_systems(bevy::app::PreStartup, (camera, setup, Ui::render_title_screen, Events::startup)) // Runs Before Loading in
+        .add_systems(Update, gamestatecheck)// Runs every frame since startup
+        .configure_sets(Update, PlayerControls.run_if())//Runs player controls
+        
+        .run(); // Runs the app
 
 
+    
 }
 
 fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>,mut materials: ResMut<Assets<bevy::sprite::ColorMaterial>>, ){
@@ -40,7 +45,7 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>,mut materials:
     commands.init_resource::<Physics::Slowdown>();
     let x = commands.spawn(MaterialMesh2dBundle{mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: 5.0})), material: materials.add(Color::RED),..default()}).id();
     commands.entity(x).insert(PlayerhitboxComp);
-
+    commands.init_resource::<Shotcounter>()
 }
 
 

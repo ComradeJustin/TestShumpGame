@@ -1,6 +1,6 @@
 
 
-use bevy::{a11y::accesskit::Vec2, asset::AssetServer, ecs::system::{Commands, Res}, hierarchy::{BuildChildren, ChildBuilder, Parent}, prelude::default, render::color::Color, text::{Text, Text2dBundle, TextSection, TextStyle}, ui::{node_bundles::{ButtonBundle, NodeBundle, TextBundle}, JustifyContent, Style, UiRect, Val}};
+use bevy::{a11y::accesskit::Vec2, asset::AssetServer, ecs::{component::Component, entity::{self, Entity}, system::{Commands, Res}}, hierarchy::{BuildChildren, ChildBuilder, Parent}, prelude::default, reflect::{self, Reflect}, render::color::Color, text::{Text, Text2dBundle, TextSection, TextStyle}, ui::{node_bundles::{ButtonBundle, NodeBundle, TextBundle}, JustifyContent, Style, UiRect, Val}};
 
 
 
@@ -14,13 +14,13 @@ pub fn variable_text(input: String, color: Color, pos: Vec2 ){
         ..Default::default()
     };
     
+}pub struct TitleScreenId{
+    pub screen: Entity,
 }
 
-
-
 pub fn render_title_screen(mut command: Commands, asset_server: Res<AssetServer>){  
-
-    command.spawn(NodeBundle
+    
+    let x = command.spawn(NodeBundle
         {style: Style{
             width: bevy::ui::Val::Percent(100.)
             , height: bevy::ui::Val::Percent(100.)
@@ -111,7 +111,8 @@ pub fn render_title_screen(mut command: Commands, asset_server: Res<AssetServer>
                                     ,  justify_self: bevy::ui::JustifySelf::Center, height: Val::Percent(80.) 
                                     ,  ..default()}));
                         });
-                });
-                
+                }).id();
+ 
 
+                
 }
