@@ -1,6 +1,6 @@
 
 
-use bevy::{a11y::accesskit::Vec2, asset::AssetServer, ecs::{component::Component, entity::{self, Entity}, system::{Commands, Res}}, hierarchy::{BuildChildren, ChildBuilder, Parent}, prelude::default, reflect::{self, Reflect}, render::color::Color, text::{Text, Text2dBundle, TextSection, TextStyle}, ui::{node_bundles::{ButtonBundle, NodeBundle, TextBundle}, JustifyContent, Style, UiRect, Val}};
+use bevy::{a11y::accesskit::Vec2, asset::AssetServer, ecs::{component::Component, entity::{self, Entity}, system::{Commands, Res, ResMut, Resource}}, hierarchy::{BuildChildren, ChildBuilder, Parent}, prelude::default, reflect::{self, Reflect}, render::color::Color, text::{Text, Text2dBundle, TextSection, TextStyle}, transform::commands, ui::{node_bundles::{ButtonBundle, NodeBundle, TextBundle}, JustifyContent, Style, UiRect, Val}};
 
 
 
@@ -14,10 +14,10 @@ pub fn variable_text(input: String, color: Color, pos: Vec2 ){
         ..Default::default()
     };
     
-}pub struct TitleScreenId{
-    pub screen: Entity,
 }
 
+#[derive(bevy::ecs::component::Component)]
+pub struct GUI;
 pub fn render_title_screen(mut command: Commands, asset_server: Res<AssetServer>){  
     
     let x = command.spawn(NodeBundle
@@ -44,7 +44,7 @@ pub fn render_title_screen(mut command: Commands, asset_server: Res<AssetServer>
                         , ..Default::default()}
                         , background_color:Color::rgba_u8(26, 20, 35, 255).into() // Ui background main
                         , ..Default::default()
-                    })
+                    }).insert(GUI)
                     .with_children(
                         |parent|
                         {
@@ -66,7 +66,7 @@ pub fn render_title_screen(mut command: Commands, asset_server: Res<AssetServer>
                             
                             }
                         )
-                        .with_children(
+                        .insert(GUI).with_children(
                             |parent|
                             {
                                 parent.spawn(
@@ -85,9 +85,9 @@ pub fn render_title_screen(mut command: Commands, asset_server: Res<AssetServer>
                                  }
                                 
                                 
-                                ));
+                                )).insert(GUI);
                             }
-                        );
+                        ).insert(GUI);
 
 
 
@@ -109,10 +109,9 @@ pub fn render_title_screen(mut command: Commands, asset_server: Res<AssetServer>
                                     position_type: bevy::ui::PositionType::Absolute
                                     ,  align_self: bevy::ui::AlignSelf::Center
                                     ,  justify_self: bevy::ui::JustifySelf::Center, height: Val::Percent(80.) 
-                                    ,  ..default()}));
-                        });
-                }).id();
- 
+                                    ,  ..default()})).insert(GUI);
+                        }).insert(GUI);
+                }).insert(GUI).id();
 
                 
 }

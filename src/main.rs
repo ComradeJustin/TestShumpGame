@@ -1,6 +1,6 @@
-use bevy::{app::{App, First, PluginGroup, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{entity::Entity, query::With, schedule::{IntoSystemSetConfigs, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
-use Events::gamestatecheck;
-use Physics::{PlayerhitboxComp, Shotcounter};
+use bevy::{app::{App, First, PluginGroup, PostStartup, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{entity::Entity, query::With, schedule::{common_conditions::resource_equals, IntoSystemConfigs, IntoSystemSetConfigs, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, ui::update, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
+
+use Physics::{spawnplayer, PlayerhitboxComp, Shotcounter};
 
 
 mod Events;
@@ -8,9 +8,6 @@ mod Physics;
 mod Ui;
 
 
-
-#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-struct PlayerControls;
 fn main() {
 
     App::new()
@@ -29,11 +26,11 @@ fn main() {
                 
                  ..Default::default()}).set(ImagePlugin::default_nearest()))
 
-                 
+
         .add_systems(bevy::app::PreStartup, (camera, setup, Ui::render_title_screen, Events::startup)) // Runs Before Loading in
-        .add_systems(Update, gamestatecheck)// Runs every frame since startup
-        .configure_sets(Update, PlayerControls.run_if())//Runs player controls
-        
+        .add_systems(Update, Events::gamestatecheck)// Runs every frame since startup
+        .add_systems(PostStartup, spawnplayer)
+        .add_systems(Update, (Physics::guntimer,Physics::input, Physics::physloop).run_if( resource_equals(Events::CurrentState{ screen_type: true, currentlevel: 1 })))  
         .run(); // Runs the app
 
 
@@ -41,6 +38,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>,mut materials: ResMut<Assets<bevy::sprite::ColorMaterial>>, ){
+
     commands.init_resource::<Physics::GlobalChecker>();
     commands.init_resource::<Physics::Slowdown>();
     let x = commands.spawn(MaterialMesh2dBundle{mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: 5.0})), material: materials.add(Color::RED),..default()}).id();

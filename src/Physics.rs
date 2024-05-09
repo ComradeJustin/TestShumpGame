@@ -91,7 +91,7 @@ pub fn devmode(key: Res<ButtonInput<KeyCode>>, mut devstate: ResMut<GlobalChecke
         devstate.dev_mode = true;
     }
     if devstate.dev_mode == true{
-        // Run dev code
+        println!("dev")
     }
 }
 
@@ -303,7 +303,7 @@ pub fn projectile(mut commands: Commands,asset_server: Res<AssetServer>, pos: Ve
     commands.spawn((SpriteBundle{texture: asset_server.load(r#"R.png"#),transform: Transform::from_xyz(pos.x, pos.y+10.0, pos.z).with_scale(Vec3::splat(0.01)), ..Default::default()},Refplayerproj));
 }
 
-fn RampUpFunction(a:f32, s:f32, h:f32, v:f32, c:f32, time:f32) -> f32{ //My favorite function
+fn RampUpFunction(a:f32, s:f32, h:f32, v:f32, c:f32, time:f32) -> f32{ //My favorite function (Modified Logistic curve)
     return c*(1.0/(1.0+std::f32::consts::E.powf(-h*(time/s+v))))+a;
 }
   
