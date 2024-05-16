@@ -1,9 +1,11 @@
-use bevy::{app::{App, First, PluginGroup, PostStartup, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{entity::Entity, query::With, schedule::{common_conditions::resource_equals, IntoSystemConfigs, IntoSystemSetConfigs, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, ui::update, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
+use bevy::{app::{App, First, Last, Plugin, PluginGroup, PostStartup, PostUpdate, PreUpdate, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{query::With, schedule::{common_conditions::{in_state, resource_equals}, IntoSystemConfigs, IntoSystemSetConfigs, OnEnter, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{camera::OrthographicProjection, color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, ui::update, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
+
 
 use Physics::{spawnplayer, PlayerhitboxComp, Shotcounter};
+use StageEvent::GameState;
 
 
-mod Events;
+mod StageEvent;
 mod Physics;
 mod Ui;
 
@@ -17,8 +19,8 @@ fn main() {
             Some(Window
                 {title: "Amogus".into(), 
                 name: Some("amogus2".into()), 
-                resolution: WindowResolution::new(960., 720.).with_scale_factor_override(1.5), 
-                position: bevy::window::WindowPosition::Centered(bevy::window::MonitorSelection::Current), 
+                resolution: WindowResolution::new(960., 720.).with_scale_factor_override(1.0), 
+                position: bevy::window::WindowPosition::Centered(bevy::window::MonitorSelection::Primary), 
                 resizable: false,
                 mode: bevy::window::WindowMode::Windowed, 
                 enabled_buttons: EnabledButtons { minimize: true, maximize: false, close: true }, 
@@ -27,23 +29,40 @@ fn main() {
                  ..Default::default()}).set(ImagePlugin::default_nearest()))
 
 
-        .add_systems(bevy::app::PreStartup, (camera, setup, Ui::render_title_screen, Events::startup)) // Runs Before Loading in
-        .add_systems(Update, Events::gamestatecheck)// Runs every frame since startup
-        .add_systems(PostStartup, spawnplayer)
-        .add_systems(Update, (Physics::guntimer,Physics::input, Physics::physloop).run_if( resource_equals(Events::CurrentState{ screen_type: true, currentlevel: 1 })))  
+        .add_plugins(StartupPlugin)
+        .add_plugins(MaingamePlugin)
         .run(); // Runs the app
 
 
     
 }
+struct StartupPlugin;
+impl Plugin for StartupPlugin{
+    fn build(&self, app: &mut App) {
+        app.insert_state(GameState::MainMenu);
+        app.add_systems(bevy::app::PreStartup, (camera, setup)); // Runs Before Loading in
+        app.add_systems(OnEnter(GameState::MainMenu), Ui::render_title_screen.run_if(in_state(GameState::MainMenu))); //Loads main Menu
+        app.add_systems(PostUpdate, StageEvent::gamestatecheck);// Runs every frame since startup
+        app.add_systems(PostStartup, spawnplayer);
+
+    }
+}
+
+struct MaingamePlugin;
+impl Plugin for MaingamePlugin{
+    fn build(&self, app: &mut App) {
+        app.add_systems(PreUpdate, (Physics::guntimer,Physics::input, Physics::physloop).run_if(in_state(GameState::InGame)));  
+    }
+}
+
 
 fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>,mut materials: ResMut<Assets<bevy::sprite::ColorMaterial>>, ){
 
-    commands.init_resource::<Physics::GlobalChecker>();
+ 
     commands.init_resource::<Physics::Slowdown>();
-    let x = commands.spawn(MaterialMesh2dBundle{mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: 5.0})), material: materials.add(Color::RED),..default()}).id();
-    commands.entity(x).insert(PlayerhitboxComp);
+   
     commands.init_resource::<Shotcounter>()
+    
 }
 
 
@@ -53,34 +72,18 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>,mut materials:
 
 
 
-fn testui( mut commands: Commands){ // Spawns a test ui
-    let color = Color::RED;
-    commands.spawn(Text2dBundle {
-        text: Text {
-            sections: vec![TextSection::new(
-                format!("This is line one"),
-                TextStyle {
-                    color   ,..Default::default()
-                },
-            )],
-            ..Default::default()
-        },
-        ..Default::default()
-    });
-}
 fn camera(mut commands: Commands){
 
-    commands.spawn((
-        Camera2dBundle {
-            camera: bevy::render::camera::Camera {
-
-                ..default()
-            },
-         
+    let mut cam = Camera2dBundle {
+        camera: bevy::render::camera::Camera {
+            clear_color: bevy::render::camera::ClearColorConfig::Custom(Color::BLACK),
             ..default()
         },
-
-    ));
+        projection: OrthographicProjection{scaling_mode: bevy::render::camera::ScalingMode::WindowSize(1.),..Default::default()},
+        ..default()
+    };
+    cam.transform.translation.z = 1000.0;
+    commands.spawn(cam);
    
 }
 

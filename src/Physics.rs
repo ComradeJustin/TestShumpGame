@@ -1,6 +1,6 @@
 
 
-use bevy::{asset::AssetServer, audio::CpalSample, ecs::{component::Component, entity::Entity, query::With, system::{Commands, Query, Res, ResMut, Resource}, world::Ref}, input::{keyboard::KeyCode, ButtonInput}, math::{primitives::{Circle, Rectangle}, Vec3}, prelude::default, sprite::{Sprite, SpriteBundle}, time::{self, Time}, transform::{self, components::Transform}, utils::petgraph::data, window::Window};
+use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::With, system::{Commands, Query, Res, ResMut, Resource}}, input::{keyboard::KeyCode, ButtonInput}, math::Vec3, prelude::default, render::{color::Color, mesh::Mesh}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::Time, transform::components::Transform, window::Window};
 
 
 
@@ -15,15 +15,12 @@ pub struct Shotcounter {
     timesincelastshot: f32
 }
 #[derive(Component, Default)]
-pub struct Enemyproj{
-    bullet_type: u8,
-    owner: u8,
-    size: u8 
-}
+pub struct Enemyproj;
 
 
 
-const playerspritesize: f32 = 25.0;
+
+const PLAYERSPRITESIZE: f32 = 35.0;
 
 
 #[derive(Resource, Default)]
@@ -32,24 +29,15 @@ pub struct Slowdown{
     rate: f32,
     count: f32
 }
-#[derive(Resource, Default)]
-pub struct GlobalChecker{
-    dev_mode: bool
-}
 
 
 
 
-struct playerdata{
-    position:Vec3,
-    hp:f32,
-    velocity:f32,
-    direction:f32
-    
-}
-impl Default for playerdata{
+
+struct Playerdata{velocity:f32,}
+impl Default for Playerdata{
     fn default() -> Self {
-        Self { position: Default::default(), hp: Default::default(), velocity: 300.0, direction: Default::default() }
+        Self { velocity: 300.0}
     }
 
 }
@@ -72,11 +60,11 @@ pub fn physloop(mut transform: Query<(Entity, &mut Transform), With<Refplayerpro
 }
 //Timer for firing
 pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Commands,asset_server: Res<AssetServer>,x: Query<&mut Transform, With<Refplayer>>,slow: Res<Slowdown>){ //Sets firerate
-    let pos = x.single().translation;
+    let mut pos = x.single().translation;
     let delay:f32 = 0.25; //Fire rate scales with delay
     if counter.timesincelastshot*time.delta_seconds() + delay*time.delta_seconds() * slow.rate  <= time.elapsed_seconds() * time.delta_seconds(){
         counter.timesincelastshot = time.elapsed_seconds();
-        
+        pos.y = PLAYERSPRITESIZE/2. + pos.y;
         projectile(commands, asset_server, pos)
     }
 
@@ -86,25 +74,24 @@ pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Comm
 
 
 
-pub fn devmode(key: Res<ButtonInput<KeyCode>>, mut devstate: ResMut<GlobalChecker>){
-    if key.pressed(KeyCode::AltLeft){
-        devstate.dev_mode = true;
-    }
-    if devstate.dev_mode == true{
-        println!("dev")
-    }
-}
 
 
 
 
 
-/*pub fn collision_check(mut commands: Commands, player: Query<&mut Transform, With<Refplayer>>, enemyproj: Query<(Entity, &Transform), With<Enemyproj>>){
-        let playerpos = player.single().1;
-        
+pub fn collision_check(player: Query<&mut Transform, With<Refplayer>>, mut hitbox: Query<&mut Transform, With<PlayerhitboxComp>>){
+        let playerpos = player.single().translation;
+        for item in hitbox.iter(){
+            println!("1 hitbox")
+        }
     
-}*/
-
+}
+//initialize spawning player
+pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut meshes: ResMut<Assets<Mesh>>,mut materials: ResMut<Assets<bevy::sprite::ColorMaterial>>){
+    commands.spawn((SpriteBundle{sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(PLAYERSPRITESIZE, PLAYERSPRITESIZE)), ..default()},texture: asset_server.load(r#"OIP.png"#),transform: Transform::from_xyz(0.0, 0.0, 5.0), ..Default::default()},Refplayer));
+    let x = commands.spawn(MaterialMesh2dBundle{mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: 5.0})), material: materials.add(Color::RED),..default()}).id();
+    commands.entity(x).insert(PlayerhitboxComp);
+}
 
 
 
@@ -121,7 +108,7 @@ pub fn devmode(key: Res<ButtonInput<KeyCode>>, mut devstate: ResMut<GlobalChecke
 //Input loop and clamping
 pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, With<Refplayer>>, time: Res<Time>, mut slowcheck: ResMut<Slowdown>, windows: Query<&Window>){
 
-    let data = playerdata::default();
+    let data = Playerdata::default();
     let velo  = data.velocity;
 
     let window = windows.single();
@@ -141,7 +128,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
     if key.pressed(KeyCode::ShiftLeft) || key.pressed(KeyCode::ControlLeft){ 
         slowcheck.truefalsechecker = true;
         if slowcheck.rate < 5.0{
-            slowcheck.rate = RampUpFunction(0.0, 1.5, 0.455, -3.1, 5.0, slowcheck.count);
+            slowcheck.rate = ramp_up_function(0.0, 1.5, 0.455, -3.1, 5.0, slowcheck.count);
         }
 
         if slowcheck.count > 15.0{
@@ -159,7 +146,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
         slowcheck.truefalsechecker = false;
         if slowcheck.rate > 1.0{
             slowcheck.count -= 0.01_f32.log(time.delta_seconds())/20.0;
-            slowcheck.rate = RampUpFunction(0.0, 0.5, 0.455, -3.1, 5.0, slowcheck.count);
+            slowcheck.rate = ramp_up_function(0.0, 0.5, 0.455, -3.1, 5.0, slowcheck.count);
         }
         if slowcheck.count < 0.0{
             slowcheck.count = 0.0;
@@ -175,26 +162,26 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
         println!("rate {} count {}", slowcheck.rate,slowcheck.count)
     }
 
-
+  
     //Clamping to screen
 
     let windowbox = [window.height()/2., window.width()/2.];
-    let playerclamp = [playerpos.translation.x - playerspritesize/2., playerpos.translation.x + playerspritesize/2., playerpos.translation.y - playerspritesize/2., playerpos.translation.y + playerspritesize/2. ];
+    let playerclamp = [playerpos.translation.x - PLAYERSPRITESIZE/2., playerpos.translation.x + PLAYERSPRITESIZE/2., playerpos.translation.y - PLAYERSPRITESIZE/2., playerpos.translation.y + PLAYERSPRITESIZE/2. ];
     if playerclamp[2] <= -windowbox[0]{//Bottom border
         diry[0] = 0.;
-        playerpos.translation.y = -windowbox[0] + playerspritesize/2.;
+        playerpos.translation.y = -windowbox[0] + PLAYERSPRITESIZE/2.;
         }   
     if playerclamp[3] >= windowbox[0]{//Top border
         diry[1] = 0.;
-        playerpos.translation.y = windowbox[0] - playerspritesize/2.;
+        playerpos.translation.y = windowbox[0] - PLAYERSPRITESIZE/2.;
         }
     if playerclamp[1] >= windowbox[1]{//Right border
         dirx[1] = 0.;
-        playerpos.translation.x = windowbox[1] - playerspritesize/2.;
+        playerpos.translation.x = windowbox[1] - PLAYERSPRITESIZE/2.;
         } 
     if playerclamp[0] <= -windowbox[1]{//Left border
         dirx[0] = 0.;
-        playerpos.translation.x = -windowbox[1] + playerspritesize/2.;
+        playerpos.translation.x = -windowbox[1] + PLAYERSPRITESIZE/2.;
         } 
         
         
@@ -292,18 +279,16 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
 #[derive(bevy::ecs::component::Component)]
 pub struct Refplayer;
-//initialize spawning player
-pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>){
-    commands.spawn((SpriteBundle{sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(playerspritesize, playerspritesize)), ..default()},texture: asset_server.load(r#"OIP.png"#),transform: Transform::from_xyz(100.00, 0.0, 5.0), ..Default::default()},Refplayer));
-}
+
+
 #[derive(bevy::ecs::component::Component)]
 pub struct Refplayerproj;
 //Spawn projectile
 pub fn projectile(mut commands: Commands,asset_server: Res<AssetServer>, pos: Vec3){
-    commands.spawn((SpriteBundle{texture: asset_server.load(r#"R.png"#),transform: Transform::from_xyz(pos.x, pos.y+10.0, pos.z).with_scale(Vec3::splat(0.01)), ..Default::default()},Refplayerproj));
+    commands.spawn((SpriteBundle{texture: asset_server.load(r#"R.png"#),transform: Transform::from_xyz(pos.x, pos.y, pos.z).with_scale(Vec3::splat(0.01)), ..Default::default()},Refplayerproj));
 }
 
-fn RampUpFunction(a:f32, s:f32, h:f32, v:f32, c:f32, time:f32) -> f32{ //My favorite function (Modified Logistic curve)
+fn ramp_up_function(a:f32, s:f32, h:f32, v:f32, c:f32, time:f32) -> f32{ //My favorite function (Modified Logistic curve)
     return c*(1.0/(1.0+std::f32::consts::E.powf(-h*(time/s+v))))+a;
 }
   
