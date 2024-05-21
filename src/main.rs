@@ -1,6 +1,7 @@
 use bevy::{app::{App, First, Last, Plugin, PluginGroup, PostStartup, PostUpdate, PreUpdate, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{query::With, schedule::{common_conditions::{in_state, resource_equals}, IntoSystemConfigs, IntoSystemSetConfigs, OnEnter, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{camera::OrthographicProjection, color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, ui::update, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
 
 
+use bevy_pixel_camera::{PixelCameraPlugin, PixelViewport, PixelZoom};
 use Physics::{spawnplayer, PlayerhitboxComp, Shotcounter};
 use StageEvent::GameState;
 
@@ -13,7 +14,7 @@ mod Ui;
 fn main() {
 
     App::new()
-
+        .add_plugins(PixelCameraPlugin)
         .add_plugins(DefaultPlugins::set(DefaultPlugins,WindowPlugin{ 
             primary_window: 
             Some(Window
@@ -78,16 +79,27 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>,mut materials:
 
 fn camera(mut commands: Commands){
 
-    let mut cam = Camera2dBundle {
-        camera: bevy::render::camera::Camera {
-            clear_color: bevy::render::camera::ClearColorConfig::Custom(Color::BLACK),
+    let cam = Camera2dBundle {
+        projection: OrthographicProjection {
+            // don't forget to set `near` and `far`
+            near: -1000.0,
+            far: 1000.0,
+            // ... any other settings you want to change ...
             ..default()
         },
-        projection: OrthographicProjection{scaling_mode: bevy::render::camera::ScalingMode::WindowSize(1.),..Default::default()},
+        camera: bevy::render::camera::Camera {
+            clear_color: bevy::render::camera::ClearColorConfig::Custom(Color::BEIGE),
+            
+            ..default()
+        },
         ..default()
     };
-    cam.transform.translation.z = 1000.0;
-    commands.spawn(cam);
+    commands.spawn((
+        cam,
+        PixelZoom::Fixed(1),
+        PixelViewport,
+    ));
+    
    
 }
 

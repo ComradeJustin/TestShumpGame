@@ -95,7 +95,7 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut me
             SpriteBundle
             {sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(PLAYERSPRITESIZE, PLAYERSPRITESIZE)), ..default()}
             ,texture: asset_server.load(r#"OIP.png"#)
-            ,transform: Transform::from_xyz(0.0, 0.0, 5.0)
+            ,transform: Transform::from_xyz(0.0, 0.0, 0.0)
             , ..Default::default()},Refplayer))
             .add_child(x);
 }
