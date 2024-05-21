@@ -27,23 +27,25 @@ fn main() {
                 ..Default::default() }),
                 
                  ..Default::default()}).set(ImagePlugin::default_nearest()))
-
+        .insert_state(GameState::MainMenu)
 
         .add_plugins(StartupPlugin)
         .add_plugins(MaingamePlugin)
+        
         .run(); // Runs the app
 
 
     
 }
+
 struct StartupPlugin;
 impl Plugin for StartupPlugin{
     fn build(&self, app: &mut App) {
-        app.insert_state(GameState::MainMenu);
+        
         app.add_systems(bevy::app::PreStartup, (camera, setup)); // Runs Before Loading in
-        app.add_systems(OnEnter(GameState::MainMenu), Ui::render_title_screen.run_if(in_state(GameState::MainMenu))); //Loads main Menu
+        app.add_systems(OnEnter(GameState::MainMenu), Ui::render_title_screen); //Loads main Menu
         app.add_systems(PostUpdate, StageEvent::gamestatecheck);// Runs every frame since startup
-        app.add_systems(PostStartup, spawnplayer);
+       
 
     }
 }
@@ -51,14 +53,16 @@ impl Plugin for StartupPlugin{
 struct MaingamePlugin;
 impl Plugin for MaingamePlugin{
     fn build(&self, app: &mut App) {
-        app.add_systems(PreUpdate, (Physics::guntimer,Physics::input, Physics::physloop).run_if(in_state(GameState::InGame)));  
+        app.add_systems(OnEnter(GameState::InGame), spawnplayer);
+        app.add_systems(PreUpdate, (Physics::guntimer).run_if(in_state(GameState::InGame)));  
+        app.add_systems(PostUpdate, (Physics::physloop,Physics::input).run_if(in_state(GameState::InGame)));
     }
 }
 
 
 fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>,mut materials: ResMut<Assets<bevy::sprite::ColorMaterial>>, ){
 
- 
+    
     commands.init_resource::<Physics::Slowdown>();
    
     commands.init_resource::<Shotcounter>()

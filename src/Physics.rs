@@ -1,6 +1,6 @@
 
 
-use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::With, system::{Commands, Query, Res, ResMut, Resource}}, input::{keyboard::KeyCode, ButtonInput}, math::Vec3, prelude::default, render::{color::Color, mesh::Mesh}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::Time, transform::components::Transform, window::Window};
+use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::With, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, math::Vec3, prelude::default, render::{color::Color, mesh::Mesh}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::Time, transform::components::Transform, window::Window};
 
 
 
@@ -79,25 +79,34 @@ pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Comm
 
 
 
-pub fn collision_check(player: Query<&mut Transform, With<Refplayer>>, mut hitbox: Query<&mut Transform, With<PlayerhitboxComp>>){
-        let playerpos = player.single().translation;
-        for item in hitbox.iter(){
-            println!("1 hitbox")
-        }
-    
-}
+
 //initialize spawning player
 pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut meshes: ResMut<Assets<Mesh>>,mut materials: ResMut<Assets<bevy::sprite::ColorMaterial>>){
-    commands.spawn((SpriteBundle{sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(PLAYERSPRITESIZE, PLAYERSPRITESIZE)), ..default()},texture: asset_server.load(r#"OIP.png"#),transform: Transform::from_xyz(0.0, 0.0, 5.0), ..Default::default()},Refplayer));
-    let x = commands.spawn(MaterialMesh2dBundle{mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: 5.0})), material: materials.add(Color::RED),..default()}).id();
-    commands.entity(x).insert(PlayerhitboxComp);
+    
+    let x = commands.spawn(
+        ((MaterialMesh2dBundle
+            {mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: 5.0}))
+            , material: materials.add(Color::RED)
+            ,..default()}),PlayerhitboxComp)).id();
+            //Adds a hitbox as a child
+
+    commands.spawn(
+        (
+            SpriteBundle
+            {sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(PLAYERSPRITESIZE, PLAYERSPRITESIZE)), ..default()}
+            ,texture: asset_server.load(r#"OIP.png"#)
+            ,transform: Transform::from_xyz(0.0, 0.0, 5.0)
+            , ..Default::default()},Refplayer))
+            .add_child(x);
 }
 
 
 
 
 
-
+pub fn gethitbox(hitbox: Query<Entity, With<PlayerhitboxComp>>){
+    
+}
 
 
 
