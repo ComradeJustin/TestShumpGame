@@ -1,4 +1,4 @@
-use bevy::{app::{App, First, Last, Plugin, PluginGroup, PostStartup, PostUpdate, PreUpdate, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{query::With, schedule::{common_conditions::{in_state, resource_equals}, IntoSystemConfigs, IntoSystemSetConfigs, OnEnter, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{camera::OrthographicProjection, color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, ui::update, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
+use bevy::{app::{App, First, FixedUpdate, Last, Plugin, PluginGroup, PostStartup, PostUpdate, PreUpdate, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{query::With, schedule::{common_conditions::{in_state, resource_equals}, IntoSystemConfigs, IntoSystemSetConfigs, OnEnter, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{camera::OrthographicProjection, color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, transform::{components::Transform, TransformSystem}, ui::update, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
 
 
 use bevy_pixel_camera::{PixelCameraPlugin, PixelViewport, PixelZoom};
@@ -14,6 +14,7 @@ mod Ui;
 fn main() {
 
     App::new()
+        
         .add_plugins(PixelCameraPlugin)
         .add_plugins(DefaultPlugins::set(DefaultPlugins,WindowPlugin{ 
             primary_window: 
@@ -28,6 +29,7 @@ fn main() {
                 ..Default::default() }),
                 
                  ..Default::default()}).set(ImagePlugin::default_nearest()))
+
         .insert_state(GameState::MainMenu)
 
         .add_plugins(StartupPlugin)
@@ -42,8 +44,9 @@ fn main() {
 struct StartupPlugin;
 impl Plugin for StartupPlugin{
     fn build(&self, app: &mut App) {
-        
-        app.add_systems(bevy::app::PreStartup, (camera, setup)); // Runs Before Loading in
+        app.init_resource::<Physics::Slowdown>();
+        app.init_resource::<Shotcounter>();
+        app.add_systems(bevy::app::PreStartup, startup); // Runs Before Loading in
         app.add_systems(OnEnter(GameState::MainMenu), Ui::render_title_screen); //Loads main Menu
         app.add_systems(PostUpdate, StageEvent::gamestatecheck);// Runs every frame since startup
        
@@ -56,35 +59,27 @@ impl Plugin for MaingamePlugin{
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::InGame), spawnplayer);
         app.add_systems(PreUpdate, (Physics::guntimer).run_if(in_state(GameState::InGame)));  
-        app.add_systems(PostUpdate, (Physics::physloop,Physics::input).run_if(in_state(GameState::InGame)));
+        app.add_systems(Update, (Physics::physloop,Physics::input).before(TransformSystem::TransformPropagate).run_if(in_state(GameState::InGame)));
     }
 }
 
 
-fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>,mut materials: ResMut<Assets<bevy::sprite::ColorMaterial>>, ){
+
+
+
+
+
+
+
+fn startup(mut commands: Commands){
+
 
     
-    commands.init_resource::<Physics::Slowdown>();
-   
-    commands.init_resource::<Shotcounter>()
-    
-}
-
-
-
-
-
-
-
-
-fn camera(mut commands: Commands){
-
     let cam = Camera2dBundle {
         projection: OrthographicProjection {
-            // don't forget to set `near` and `far`
+
             near: -1000.0,
             far: 1000.0,
-            // ... any other settings you want to change ...
             ..default()
         },
         camera: bevy::render::camera::Camera {

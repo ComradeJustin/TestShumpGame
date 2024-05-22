@@ -20,7 +20,7 @@ pub struct Enemyproj;
 
 
 
-const PLAYERSPRITESIZE: f32 = 35.0;
+const PLAYERSPRITESIZE: f32 = 32.0;
 
 
 #[derive(Resource, Default)]
@@ -85,7 +85,7 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut me
     
     let x = commands.spawn(
         ((MaterialMesh2dBundle
-            {mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: 5.0}))
+            {mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: PLAYERSPRITESIZE/10.}))
             , material: materials.add(Color::RED)
             ,..default()}),PlayerhitboxComp)).id();
             //Adds a hitbox as a child
@@ -117,8 +117,7 @@ pub fn gethitbox(hitbox: Query<Entity, With<PlayerhitboxComp>>){
 //Input loop and clamping
 pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, With<Refplayer>>, time: Res<Time>, mut slowcheck: ResMut<Slowdown>, windows: Query<&Window>){
 
-    let data = Playerdata::default();
-    let velo  = data.velocity;
+    let velo:f32 = 300.0;
 
     let window = windows.single();
 
@@ -294,7 +293,7 @@ pub struct Refplayer;
 pub struct Refplayerproj;
 //Spawn projectile
 pub fn projectile(mut commands: Commands,asset_server: Res<AssetServer>, pos: Vec3){
-    commands.spawn((SpriteBundle{texture: asset_server.load(r#"R.png"#),transform: Transform::from_xyz(pos.x, pos.y, pos.z).with_scale(Vec3::splat(0.01)), ..Default::default()},Refplayerproj));
+    commands.spawn((SpriteBundle{texture: asset_server.load(r#"R.png"#),transform: Transform::from_xyz(pos.x, pos.y, pos.z).with_scale(Vec3::splat(0.15)/PLAYERSPRITESIZE), ..Default::default()},Refplayerproj));
 }
 
 fn ramp_up_function(a:f32, s:f32, h:f32, v:f32, c:f32, time:f32) -> f32{ //My favorite function (Modified Logistic curve)
