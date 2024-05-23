@@ -27,7 +27,7 @@ fn main() {
                 resolution: WindowResolution::new(960., 720.).with_scale_factor_override(1.0), 
                 position: bevy::window::WindowPosition::Centered(bevy::window::MonitorSelection::Primary), 
                 resizable: false,
-                
+                visible: false,
                 mode: bevy::window::WindowMode::Windowed, 
                 enabled_buttons: EnabledButtons { minimize: true, maximize: false, close: true }, 
                 ..Default::default() }),
@@ -51,7 +51,7 @@ impl Plugin for StartupPlugin{
         app.init_resource::<Physics::Slowdown>();
         app.init_resource::<Shotcounter>();
         app.add_systems(bevy::app::PreStartup, startup); // Runs Before Loading in
-        app.add_systems(OnEnter(GameState::MainMenu), Ui::render_title_screen); //Loads main Menu
+        app.add_systems(OnEnter(GameState::MainMenu), (Ui::render_title_screen, make_visible)); //Loads main Menu
         app.add_systems(PostUpdate, StageEvent::gamestatecheck);// Runs every frame since startup
        
 
@@ -68,6 +68,11 @@ impl Plugin for MaingamePlugin{
     }
 }
 
+fn make_visible(mut window: Query<&mut Window>) { //Temp, add loading screen.
+
+        window.single_mut().visible = true;
+
+}
 
 
 
@@ -76,8 +81,7 @@ impl Plugin for MaingamePlugin{
 
 
 
-
-fn startup(mut commands: Commands, mut windows: NonSend<WinitWindows>){
+fn startup(mut commands: Commands){
     
 
     
