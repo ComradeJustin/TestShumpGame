@@ -44,7 +44,7 @@ pub fn physloop(mut transform: Query<(Entity, &mut Transform), With<Refplayerpro
     if !transform.is_empty(){
         for (projent, mut projpos) in transform.iter_mut(){
 
-            projpos.translation.y += (VELO*3.)  /  slow.rate; 
+            projpos.translation.y += (VELO*2.0)  /  slow.rate; 
             if projpos.translation.y > window.single().height()/2.{
                 commands.entity(projent).despawn();
 
