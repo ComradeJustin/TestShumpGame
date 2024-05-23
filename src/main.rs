@@ -1,3 +1,4 @@
+
 use bevy::{app::{App, First, FixedUpdate, Last, Plugin, PluginGroup, PostStartup, PostUpdate, PreUpdate, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{query::With, schedule::{common_conditions::{in_state, resource_equals}, IntoSystemConfigs, IntoSystemSetConfigs, OnEnter, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{camera::OrthographicProjection, color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, transform::{components::Transform, TransformSystem}, ui::update, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
 
 
@@ -12,7 +13,7 @@ mod Ui;
 
 
 fn main() {
-
+    std::env::set_current_dir(std::env::current_exe().unwrap().parent().unwrap()); 
     App::new()
         
         .add_plugins(PixelCameraPlugin)
@@ -60,6 +61,7 @@ impl Plugin for MaingamePlugin{
         app.add_systems(OnEnter(GameState::InGame), spawnplayer); //Spawns player on entering states
 
         app.add_systems(FixedUpdate, (Physics::physloop,Physics::input,Physics::guntimer).before(TransformSystem::TransformPropagate).run_if(in_state(GameState::InGame)));
+        //Runs the main Game schedule using fixed update to improve jitteryness
     }
 }
 

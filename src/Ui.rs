@@ -1,5 +1,7 @@
 
 
+use std::path::PathBuf;
+
 use bevy::{a11y::accesskit::Vec2, asset::AssetServer, ecs::{component::Component, entity::{self, Entity}, system::{Commands, Res, ResMut, Resource}}, hierarchy::{BuildChildren, ChildBuilder, Parent}, prelude::default, reflect::{self, Reflect}, render::color::Color, text::{Text, Text2dBundle, TextSection, TextStyle}, transform::commands, ui::{node_bundles::{ButtonBundle, NodeBundle, TextBundle}, JustifyContent, Style, UiRect, Val}};
 
 
@@ -16,10 +18,18 @@ pub fn variable_text(input: String, color: Color, pos: Vec2 ){
     
 }
 
+
+
 #[derive(bevy::ecs::component::Component)]
 pub struct GUI;
+
+
 pub fn render_title_screen(mut command: Commands, asset_server: Res<AssetServer>){  
+    let mut path = PathBuf::from("Fonts/Mira.ttf");
+
     
+
+
     let x = command.spawn(NodeBundle
         {style: Style{
             width: bevy::ui::Val::Percent(100.)
@@ -77,7 +87,7 @@ pub fn render_title_screen(mut command: Commands, asset_server: Res<AssetServer>
                                  {
                                     font_size: 18.,
                                     color: Color::rgba_u8(234, 205, 194, 255).into(),
-                                    font: asset_server.load(r#"Fonts\Mira.ttf"#),
+                                    font: asset_server.load(path.clone()),
                                     ..default()
 
 
@@ -95,7 +105,7 @@ pub fn render_title_screen(mut command: Commands, asset_server: Res<AssetServer>
                                 TextBundle::from_section("AMOGUS", TextStyle 
                                 {
                                     font_size: 80. ,
-                                    font: asset_server.load(r#"Fonts\Mira.ttf"#),
+                                    font: asset_server.load(path.clone()),
                                     color: Color::rgba_u8(234, 205, 194, 255).into()
                                 
                                 
