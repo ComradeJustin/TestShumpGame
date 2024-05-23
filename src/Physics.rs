@@ -1,6 +1,6 @@
 
 
-use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::With, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, math::Vec3, prelude::default, render::{color::Color, mesh::Mesh}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::Time, transform::components::Transform, window::Window};
+use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, math::Vec3, prelude::default, render::{color::Color, mesh::Mesh}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::Time, transform::components::Transform, window::Window};
 
 
 
@@ -21,8 +21,8 @@ pub struct Enemyproj;
 
 
 const PLAYERSPRITESIZE: f32 = 32.0;
-
-
+const FIRERATE: f32 = 0.1;
+const VELO:f32 = 7.0;
 #[derive(Resource, Default)]
 pub struct Slowdown{
     truefalsechecker: bool,
@@ -34,24 +34,20 @@ pub struct Slowdown{
 
 
 
-struct Playerdata{velocity:f32,}
-impl Default for Playerdata{
-    fn default() -> Self {
-        Self { velocity: 300.0}
-    }
 
-}
 //Projectile movement and lifetime
-pub fn physloop(mut transform: Query<(Entity, &mut Transform), With<Refplayerproj>>, time: Res<Time>,slow: Res<Slowdown>, window: Query<&Window>, mut commands: Commands){ //Sets the movement speed on projectiles and other checks
+pub fn physloop(mut transform: Query<(Entity, &mut Transform), With<Refplayerproj>>, slow: Res<Slowdown>, window: Query<&Window>, mut commands: Commands , playerpos:Query<&Transform, (With<Refplayer>, Without<Refplayerproj>)>){ 
+    //Sets the movement speed on projectiles and other checks
 
     if !transform.is_empty(){
         for (projent, mut projpos) in transform.iter_mut(){
-            projpos.translation.y += 500.0 * time.delta_seconds() /  slow.rate; 
+
+            projpos.translation.y += (VELO*3.)  /  slow.rate; 
             if projpos.translation.y > window.single().height()/2.{
                 commands.entity(projent).despawn();
 
             }
-            
+
         }
     }
 
@@ -61,10 +57,10 @@ pub fn physloop(mut transform: Query<(Entity, &mut Transform), With<Refplayerpro
 //Timer for firing
 pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Commands,asset_server: Res<AssetServer>,x: Query<&mut Transform, With<Refplayer>>,slow: Res<Slowdown>){ //Sets firerate
     let mut pos = x.single().translation;
-    let delay:f32 = 0.25; //Fire rate scales with delay
-    if counter.timesincelastshot*time.delta_seconds() + delay*time.delta_seconds() * slow.rate  <= time.elapsed_seconds() * time.delta_seconds(){
-        counter.timesincelastshot = time.elapsed_seconds();
-        pos.y = PLAYERSPRITESIZE/2. + pos.y;
+
+    if counter.timesincelastshot + FIRERATE * slow.rate  <= time.elapsed_seconds_wrapped() {//Fire rate added  with delay
+        counter.timesincelastshot = time.elapsed_seconds_wrapped();
+        pos.y = PLAYERSPRITESIZE/2. + pos.y + 5.0;
         projectile(commands, asset_server, pos)
     }
 
@@ -117,7 +113,7 @@ pub fn gethitbox(hitbox: Query<Entity, With<PlayerhitboxComp>>){
 //Input loop and clamping
 pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, With<Refplayer>>, time: Res<Time>, mut slowcheck: ResMut<Slowdown>, windows: Query<&Window>){
 
-    let velo:f32 = 300.0;
+
 
     let window = windows.single();
 
@@ -167,7 +163,8 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
         slowcheck.rate = 1.0;
     }
     if key.pressed(KeyCode::KeyF){
-        println!("rate {} count {}", slowcheck.rate,slowcheck.count)
+        println!("rate {} count {}", slowcheck.rate,slowcheck.count);
+        println!("test {} {}", (VELO*2.).sqrt()*2_f32.sqrt(), 1.0  * VELO )
     }
 
   
@@ -201,16 +198,17 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
             if up && left && !down && !right 
             {
-                playerpos.translation.x -= (1.0 + (velo * velo / 2.0).sqrt() * time.delta_seconds()) /slowcheck.rate * dirx[0];
-                playerpos.translation.y += (1.0 + (velo * velo / 2.0).sqrt() * time.delta_seconds()) /slowcheck.rate *diry[1];
+                playerpos.translation.x -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[0];
+                playerpos.translation.y += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[1];
+
             }
             else 
             {
                 if up && left && down{
-                    playerpos.translation.x -= (1.0 + (velo * velo / 2.0).sqrt() * time.delta_seconds()) /slowcheck.rate * dirx[0];
+                    playerpos.translation.x -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[0];
                 }
                 if up && left && right{
-                    playerpos.translation.y += (1.0 + (velo * velo / 2.0).sqrt() * time.delta_seconds()) /slowcheck.rate *diry[1];
+                    playerpos.translation.y += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[1];
                 }
             }
 
@@ -218,8 +216,8 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
 
             if up && right && !down && !left{
-                playerpos.translation.x += (1.0 + (velo * velo / 2.0).sqrt() * time.delta_seconds()) /slowcheck.rate * dirx[1];
-                playerpos.translation.y += (1.0 + (velo * velo / 2.0).sqrt() * time.delta_seconds()) /slowcheck.rate *diry[1];
+                playerpos.translation.x += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[1];
+                playerpos.translation.y += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[1];
             }
             
 
@@ -228,16 +226,16 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
             if down && right && !up && !left  
             {
-                playerpos.translation.x += (1.0 + (velo * velo / 2.0).sqrt() * time.delta_seconds()) /slowcheck.rate * dirx[1];
-                playerpos.translation.y -= (1.0 + (velo * velo / 2.0).sqrt() * time.delta_seconds()) /slowcheck.rate *diry[0];
+                playerpos.translation.x += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[1];
+                playerpos.translation.y -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[0];
             }
             else 
             {
                 if right && left && down{
-                    playerpos.translation.y -=(1.0 + (velo * velo / 2.0).sqrt() * time.delta_seconds()) /slowcheck.rate *diry[0];
+                    playerpos.translation.y -=(VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[0];
                 }
                 if up && down && right{
-                    playerpos.translation.x += (1.0 + (velo * velo / 2.0).sqrt() * time.delta_seconds()) /slowcheck.rate * dirx[1];
+                    playerpos.translation.x += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[1];
                 }
             }
 
@@ -245,8 +243,8 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
             if down && left && !up && !right
             {
-                playerpos.translation.x -= (1.0 + (velo * velo / 2.0).sqrt() * time.delta_seconds()) /slowcheck.rate * dirx[0];
-                playerpos.translation.y -= (1.0 + (velo * velo / 2.0).sqrt() * time.delta_seconds()) /slowcheck.rate *diry[0];
+                playerpos.translation.x -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[0];
+                playerpos.translation.y -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[0];
             }
     }
 
@@ -257,7 +255,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
             
         if left
         {
-            playerpos.translation.x -= 1.0 * time.delta_seconds() * velo  /slowcheck.rate * dirx[0];
+            playerpos.translation.x -= 1.0  * VELO  /slowcheck.rate * dirx[0];
         }
 
 
@@ -265,18 +263,18 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
         if right
         {
-            playerpos.translation.x += 1.0 * time.delta_seconds() * velo /slowcheck.rate * dirx[1];
+            playerpos.translation.x += 1.0  * VELO /slowcheck.rate * dirx[1];
         }
     
     
         if up
         {
-            playerpos.translation.y += 1.0 * time.delta_seconds() * velo /slowcheck.rate *diry[1];
+            playerpos.translation.y += 1.0  * VELO /slowcheck.rate *diry[1];
         }
 
         if down
         {
-            playerpos.translation.y -= 1.0 * time.delta_seconds() * velo /slowcheck.rate *diry[0]; 
+            playerpos.translation.y -= 1.0  * VELO /slowcheck.rate *diry[0]; 
 
         }
     }
@@ -293,8 +291,9 @@ pub struct Refplayer;
 pub struct Refplayerproj;
 //Spawn projectile
 pub fn projectile(mut commands: Commands,asset_server: Res<AssetServer>, pos: Vec3){
-    commands.spawn((SpriteBundle{texture: asset_server.load(r#"R.png"#),transform: Transform::from_xyz(pos.x, pos.y, pos.z).with_scale(Vec3::splat(0.15)/PLAYERSPRITESIZE), ..Default::default()},Refplayerproj));
-}
+    commands.spawn((SpriteBundle{texture: asset_server.load(r#"R.png"#),transform: Transform::from_xyz(pos.x - PLAYERSPRITESIZE/4., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
+    commands.spawn((SpriteBundle{texture: asset_server.load(r#"R.png"#),transform: Transform::from_xyz(pos.x + PLAYERSPRITESIZE/4., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
+}   
 
 fn ramp_up_function(a:f32, s:f32, h:f32, v:f32, c:f32, time:f32) -> f32{ //My favorite function (Modified Logistic curve)
     return c*(1.0/(1.0+std::f32::consts::E.powf(-h*(time/s+v))))+a;

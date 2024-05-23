@@ -57,9 +57,9 @@ impl Plugin for StartupPlugin{
 struct MaingamePlugin;
 impl Plugin for MaingamePlugin{
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::InGame), spawnplayer);
-        app.add_systems(PreUpdate, (Physics::guntimer).run_if(in_state(GameState::InGame)));  
-        app.add_systems(Update, (Physics::physloop,Physics::input).before(TransformSystem::TransformPropagate).run_if(in_state(GameState::InGame)));
+        app.add_systems(OnEnter(GameState::InGame), spawnplayer); //Spawns player on entering states
+
+        app.add_systems(FixedUpdate, (Physics::physloop,Physics::input,Physics::guntimer).before(TransformSystem::TransformPropagate).run_if(in_state(GameState::InGame)));
     }
 }
 
