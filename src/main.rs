@@ -1,5 +1,5 @@
-#![windows_subsystem = "windows"]
-use bevy::{app::{App, First, FixedUpdate, Last, Plugin, PluginGroup, PostStartup, PostUpdate, PreUpdate, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{query::With, schedule::{common_conditions::{in_state, resource_equals}, IntoSystemConfigs, IntoSystemSetConfigs, OnEnter, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{camera::OrthographicProjection, color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, transform::{components::Transform, TransformSystem}, ui::update, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
+
+use bevy::{app::{App, First, FixedUpdate, Last, Plugin, PluginGroup, PostStartup, PostUpdate, PreUpdate, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{query::With, schedule::{common_conditions::{in_state, resource_equals}, IntoSystemConfigs, IntoSystemSetConfigs, OnEnter, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{camera::OrthographicProjection, color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, time::{Fixed, Time}, transform::{components::Transform, TransformSystem}, ui::update, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
 
 
 use bevy_pixel_camera::{PixelCameraPlugin, PixelViewport, PixelZoom};
@@ -16,7 +16,7 @@ mod Ui;
 fn main() {
 
     App::new()
-
+        .insert_resource(Time::<Fixed>::from_seconds(0.01))
         .add_plugins(EmbeddedAssetPlugin::default())
         .add_plugins(PixelCameraPlugin)
         .add_plugins(DefaultPlugins::set(DefaultPlugins,WindowPlugin{ 
@@ -24,7 +24,7 @@ fn main() {
             Some(Window
                 {title: "Amogus".into(), 
                 name: Some("amogus2".into()), 
-                resolution: WindowResolution::new(960., 720.).with_scale_factor_override(1.0), 
+                resolution: WindowResolution::new(960., 720.), 
                 position: bevy::window::WindowPosition::Centered(bevy::window::MonitorSelection::Primary), 
                 resizable: false,
                 visible: false,
@@ -63,7 +63,7 @@ impl Plugin for MaingamePlugin{
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::InGame), spawnplayer); //Spawns player on entering states
 
-        app.add_systems(FixedUpdate, (Physics::physloop,Physics::input,Physics::guntimer).before(TransformSystem::TransformPropagate).run_if(in_state(GameState::InGame)));
+        app.add_systems(FixedUpdate, (Physics::physloop,Physics::input,Physics::guntimer).run_if(in_state(GameState::InGame)));
         //Runs the main Game schedule using fixed update to improve jitteryness
     }
 }

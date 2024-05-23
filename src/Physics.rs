@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, math::Vec3, prelude::default, render::{color::Color, mesh::Mesh, texture::Image}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::Time, transform::components::Transform, window::Window};
+use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, log::debug, math::Vec3, prelude::default, render::{color::Color, mesh::Mesh, texture::Image}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::Time, transform::components::Transform, window::Window};
 
 
 
@@ -24,7 +24,7 @@ pub struct Enemyproj;
 
 const PLAYERSPRITESIZE: f32 = 32.0;
 const FIRERATE: f32 = 0.1;
-const VELO:f32 = 7.0;
+const VELO:f32 = 6.0;
 #[derive(Resource, Default)]
 pub struct Slowdown{
     truefalsechecker: bool,
@@ -116,7 +116,7 @@ pub fn gethitbox(hitbox: Query<Entity, With<PlayerhitboxComp>>){
 pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, With<Refplayer>>, time: Res<Time>, mut slowcheck: ResMut<Slowdown>, windows: Query<&Window>){
 
 
-
+    
     let window = windows.single();
 
     let up = key.pressed(KeyCode::KeyW) || key.pressed(KeyCode::ArrowUp);
@@ -129,7 +129,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
     let mut playerpos = query.single_mut();
     
-    
+
 
     if key.pressed(KeyCode::ShiftLeft) || key.pressed(KeyCode::ControlLeft){ 
         slowcheck.truefalsechecker = true;
@@ -164,10 +164,9 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
     if slowcheck.rate < 1.0{
         slowcheck.rate = 1.0;
     }
-    if key.pressed(KeyCode::KeyF){
-        println!("rate {} count {}", slowcheck.rate,slowcheck.count);
-        println!("test {} {}", (VELO*2.).sqrt()*2_f32.sqrt(), 1.0  * VELO )
-    }
+
+    
+
 
   
     //Clamping to screen
@@ -202,6 +201,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
             {
                 playerpos.translation.x -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[0];
                 playerpos.translation.y += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[1];
+                
 
             }
             else 
@@ -254,9 +254,11 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
     //basic wasd movement
         else    
         {
+        
             
         if left
         {
+            
             playerpos.translation.x -= 1.0  * VELO  /slowcheck.rate * dirx[0];
         }
 
@@ -280,7 +282,9 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
         }
     }
-
+    playerpos.translation.x = playerpos.translation.x.round();
+    playerpos.translation.y = playerpos.translation.y.round();
+    println!("{}",playerpos.translation);
 }
 
 
