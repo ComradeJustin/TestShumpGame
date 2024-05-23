@@ -1,21 +1,23 @@
-
+#![windows_subsystem = "windows"]
 use bevy::{app::{App, First, FixedUpdate, Last, Plugin, PluginGroup, PostStartup, PostUpdate, PreUpdate, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{query::With, schedule::{common_conditions::{in_state, resource_equals}, IntoSystemConfigs, IntoSystemSetConfigs, OnEnter, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{camera::OrthographicProjection, color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, transform::{components::Transform, TransformSystem}, ui::update, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
 
 
 use bevy_pixel_camera::{PixelCameraPlugin, PixelViewport, PixelZoom};
+
 use Physics::{spawnplayer, PlayerhitboxComp, Shotcounter};
 use StageEvent::GameState;
 
-
+use bevy_embedded_assets::EmbeddedAssetPlugin;
 mod StageEvent;
 mod Physics;
 mod Ui;
 
 
 fn main() {
-    std::env::set_current_dir(std::env::current_exe().unwrap().parent().unwrap()); 
+
     App::new()
-        
+
+        .add_plugins(EmbeddedAssetPlugin::default())
         .add_plugins(PixelCameraPlugin)
         .add_plugins(DefaultPlugins::set(DefaultPlugins,WindowPlugin{ 
             primary_window: 
@@ -25,6 +27,7 @@ fn main() {
                 resolution: WindowResolution::new(960., 720.).with_scale_factor_override(1.0), 
                 position: bevy::window::WindowPosition::Centered(bevy::window::MonitorSelection::Primary), 
                 resizable: false,
+                
                 mode: bevy::window::WindowMode::Windowed, 
                 enabled_buttons: EnabledButtons { minimize: true, maximize: false, close: true }, 
                 ..Default::default() }),
@@ -73,8 +76,9 @@ impl Plugin for MaingamePlugin{
 
 
 
-fn startup(mut commands: Commands){
 
+fn startup(mut commands: Commands, mut windows: NonSend<WinitWindows>){
+    
 
     
     let cam = Camera2dBundle {
@@ -85,7 +89,7 @@ fn startup(mut commands: Commands){
             ..default()
         },
         camera: bevy::render::camera::Camera {
-            clear_color: bevy::render::camera::ClearColorConfig::Custom(Color::BEIGE),
+            clear_color: bevy::render::camera::ClearColorConfig::Custom(Color::BLACK),
             
             ..default()
         },

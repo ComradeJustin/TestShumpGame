@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, math::Vec3, prelude::default, render::{color::Color, mesh::Mesh}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::Time, transform::components::Transform, window::Window};
+use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, math::Vec3, prelude::default, render::{color::Color, mesh::Mesh, texture::Image}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::Time, transform::components::Transform, window::Window};
 
 
 
@@ -80,7 +80,7 @@ pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Comm
 
 //initialize spawning player
 pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut meshes: ResMut<Assets<Mesh>>,mut materials: ResMut<Assets<bevy::sprite::ColorMaterial>>){
-    let path = PathBuf::from("OIP.png");
+
     let x = commands.spawn(
         ((MaterialMesh2dBundle
             {mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: PLAYERSPRITESIZE/10.}))
@@ -92,12 +92,12 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut me
         (
             SpriteBundle
             {sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(PLAYERSPRITESIZE, PLAYERSPRITESIZE)), ..default()}
-            ,texture: asset_server.load(path)
+            ,texture: asset_server.load::<Image>("embedded://OIP.png")
             ,transform: Transform::from_xyz(0.0, 0.0, 0.0)
             , ..Default::default()},Refplayer))
             .add_child(x);
 }
-
+    
 
 
 
@@ -293,9 +293,9 @@ pub struct Refplayer;
 pub struct Refplayerproj;
 //Spawn projectile
 pub fn projectile(mut commands: Commands,asset_server: Res<AssetServer>, pos: Vec3){
-    let path = PathBuf::from("R.png");  
-    commands.spawn((SpriteBundle{texture: asset_server.load(path.clone()),transform: Transform::from_xyz(pos.x - PLAYERSPRITESIZE/4., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
-    commands.spawn((SpriteBundle{texture: asset_server.load(path.clone()),transform: Transform::from_xyz(pos.x + PLAYERSPRITESIZE/4., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
+    let path = "embedded://R.png" ; 
+    commands.spawn((SpriteBundle{texture: asset_server.load::<Image>(path),transform: Transform::from_xyz(pos.x - PLAYERSPRITESIZE/4., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
+    commands.spawn((SpriteBundle{texture: asset_server.load::<Image>(path),transform: Transform::from_xyz(pos.x + PLAYERSPRITESIZE/4., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
 }   
 
 fn ramp_up_function(a:f32, s:f32, h:f32, v:f32, c:f32, time:f32) -> f32{ //My favorite function (Modified Logistic curve)
