@@ -24,7 +24,7 @@ pub struct Enemyproj;
 
 const PLAYERSPRITESIZE: f32 = 32.0;
 const FIRERATE: f32 = 0.1;
-const VELO:f32 = 6.0;
+const VELO:f32 = 4.0;
 #[derive(Resource, Default)]
 pub struct Slowdown{
     truefalsechecker: bool,
