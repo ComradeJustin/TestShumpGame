@@ -24,7 +24,7 @@ pub struct Enemyproj;
 
 const PLAYERSPRITESIZE: f32 = 32.0;
 const FIRERATE: f32 = 0.1;
-const VELO:f32 = 5.0;
+const VELO:f32 = 3.0;
 const HITBOXRADIUS:f32 = 5.0;
 #[derive(Resource, Default)]
 pub struct Slowdown{
@@ -68,7 +68,7 @@ pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Comm
 
     if counter.timesincelastshot + FIRERATE * slow.rate  <= time.elapsed_seconds_wrapped() {//Fire rate added  with delay
         counter.timesincelastshot = time.elapsed_seconds_wrapped();
-        pos.y = -PLAYERSPRITESIZE/2. + pos.y + 2.0;
+        pos.y = PLAYERSPRITESIZE/2. + pos.y + 2.0;
         pos.z = x.single().translation.z - 10.0;
         projectile(commands, asset_server, pos)
     }
@@ -103,14 +103,25 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut me
             ,transform: Transform::from_xyz(0.0, 0.0, 0.0)
             , ..Default::default()},Refplayer))
             .add_child(x);
+    commands.spawn(
+            ((MaterialMesh2dBundle
+                {mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: HITBOXRADIUS}))
+                , material: materials.add(Color::BLUE)
+                ,..default()}),Enemyproj));
+                //test enemy proj
 }
     
 
 
 
 
-pub fn gethitbox(origin: Query<&Transform, With<PlayerhitboxComp>>){
+pub fn gethitbox(origin: Query<&Transform, With<PlayerhitboxComp>>, enemy: Query<(Entity,&Transform), With<Enemyproj>>){
+    for entity in enemy.iter(){
 
+        if ((entity.1.translation.x - origin.single().translation.x).powf(2.)+(entity.1.translation.y - origin.single().translation.y).powf(2.)).sqrt()  < HITBOXRADIUS{
+            println!("TEST!");
+        }
+    }
 }
 
 
@@ -291,7 +302,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
     }
     playerpos.translation = playerpos.translation.round(); //Pixel perfect movement, as 1 unit in game is 1 unit in screen
 
-    println!("{}",playerpos.translation);
+
 }
 
 
@@ -305,8 +316,8 @@ pub struct Refplayerproj;
 //Spawn projectile
 pub fn projectile(mut commands: Commands,asset_server: Res<AssetServer>, pos: Vec3){
     let path = "embedded://R.png" ; 
-    commands.spawn((SpriteBundle{texture: asset_server.load::<Image>(path),transform: Transform::from_xyz(pos.x - PLAYERSPRITESIZE/2., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
-    commands.spawn((SpriteBundle{texture: asset_server.load::<Image>(path),transform: Transform::from_xyz(pos.x + PLAYERSPRITESIZE/2., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
+    commands.spawn((SpriteBundle{texture: asset_server.load::<Image>(path),transform: Transform::from_xyz(pos.x - PLAYERSPRITESIZE/3., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
+    commands.spawn((SpriteBundle{texture: asset_server.load::<Image>(path),transform: Transform::from_xyz(pos.x + PLAYERSPRITESIZE/3., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
 }   
 
 fn ramp_up_function(a:f32, s:f32, h:f32, v:f32, c:f32, time:f32) -> f32{ //My favorite function (Modified Logistic curve)

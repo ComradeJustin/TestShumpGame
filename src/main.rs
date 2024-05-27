@@ -63,7 +63,7 @@ impl Plugin for MaingamePlugin{
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::InGame), spawnplayer); //Spawns player on entering states
 
-        app.add_systems(FixedUpdate, (Physics::physloop,Physics::input,Physics::guntimer).run_if(in_state(GameState::InGame)));
+        app.add_systems(FixedUpdate, (Physics::gethitbox,Physics::physloop,Physics::input,Physics::guntimer).run_if(in_state(GameState::InGame)));
         //Runs the main Game schedule using fixed update to improve jitteryness
     }
 }
