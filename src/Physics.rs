@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, log::debug, math::Vec3, prelude::default, render::{color::Color, mesh::Mesh, texture::Image}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::Time, transform::components::Transform, window::Window};
+use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, log::debug, math::Vec3, prelude::default, render::{color::Color, mesh::Mesh, texture::Image}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::Time, transform::components::{GlobalTransform, Transform}, window::Window};
 
 
 
@@ -26,6 +26,7 @@ const PLAYERSPRITESIZE: f32 = 32.0;
 const FIRERATE: f32 = 0.1;
 const VELO:f32 = 3.0;
 const HITBOXRADIUS:f32 = 5.0;
+const ENEMYTESTPROJ:f32 = 10.0;
 #[derive(Resource, Default)]
 pub struct Slowdown{
     truefalsechecker: bool,
@@ -45,7 +46,7 @@ pub fn physloop(mut transform: Query<(Entity, &mut Transform), With<Refplayerpro
     if !transform.is_empty(){
         for (projent, mut projpos) in transform.iter_mut(){
 
-            projpos.translation.y += (VELO*2.0)  /  slow.rate;
+            projpos.translation.y +=   (VELO*2.0) /  slow.rate;
              
             projpos.translation = projpos.translation.round();
 
@@ -103,9 +104,12 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut me
             ,transform: Transform::from_xyz(0.0, 0.0, 0.0)
             , ..Default::default()},Refplayer))
             .add_child(x);
+    
+    
+    
     commands.spawn(
             ((MaterialMesh2dBundle
-                {mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: HITBOXRADIUS}))
+                {mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: ENEMYTESTPROJ}))
                 , material: materials.add(Color::BLUE)
                 ,..default()}),Enemyproj));
                 //test enemy proj
@@ -113,13 +117,16 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut me
     
 
 
+// Calculates hitbox and makes enemy kill you
+
+pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>, enemy: Query<&Transform, With<Enemyproj>>){
 
 
-pub fn gethitbox(origin: Query<&Transform, With<PlayerhitboxComp>>, enemy: Query<(Entity,&Transform), With<Enemyproj>>){
-    for entity in enemy.iter(){
-
-        if ((entity.1.translation.x - origin.single().translation.x).powf(2.)+(entity.1.translation.y - origin.single().translation.y).powf(2.)).sqrt()  < HITBOXRADIUS{
-            println!("TEST!");
+    if !enemy.is_empty(){
+        for entity in enemy.iter(){
+            if (origin.single().translation().distance(entity.translation)).round().abs() - ENEMYTESTPROJ <=  HITBOXRADIUS{
+                println!("test!")
+            }
         }
     }
 }
