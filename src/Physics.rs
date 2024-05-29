@@ -25,7 +25,7 @@ pub struct Enemyproj;
 const PLAYERSPRITESIZE: f32 = 32.0;
 const FIRERATE: f32 = 0.1;
 const VELO:f32 = 3.0;
-const HITBOXRADIUS:f32 = 5.0;
+const HITBOXRADIUS:f32 = 30.0;
 const ENEMYTESTPROJ:f32 = 10.0;
 #[derive(Resource, Default)]
 pub struct Slowdown{
@@ -117,7 +117,7 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut me
             SpriteBundle
             {sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(PLAYERSPRITESIZE, PLAYERSPRITESIZE)), ..default()}
             ,texture: asset_server.load::<Image>("embedded://OIP.png")
-            ,transform: Transform::from_xyz(0.0, 0.0, 0.0)
+            ,transform: Transform::from_xyz(0.0, 0.0, -1.0)
             , ..Default::default()},Refplayer))
             .add_child(x);
     
