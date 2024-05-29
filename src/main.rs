@@ -4,7 +4,7 @@ use bevy::{app::{App, First, FixedUpdate, Last, Plugin, PluginGroup, PostStartup
 
 use bevy_pixel_camera::{PixelCameraPlugin, PixelViewport, PixelZoom};
 
-use Physics::{spawnplayer, PlayerhitboxComp, Shotcounter};
+use Physics::{spawnplayer, PlayerData, PlayerhitboxComp, Shotcounter};
 use StageEvent::GameState;
 
 use bevy_embedded_assets::EmbeddedAssetPlugin;
@@ -49,6 +49,7 @@ struct StartupPlugin;
 impl Plugin for StartupPlugin{
     fn build(&self, app: &mut App) {
         app.init_resource::<Physics::Slowdown>();
+        app.init_resource::<Physics::PlayerData>();
         app.init_resource::<Shotcounter>();
         app.add_systems(bevy::app::PreStartup, startup); // Runs Before Loading in
         app.add_systems(OnEnter(GameState::MainMenu), (Ui::render_title_screen, make_visible)); //Loads main Menu

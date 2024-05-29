@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, log::debug, math::Vec3, prelude::default, render::{color::Color, mesh::Mesh, texture::Image}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::Time, transform::components::{GlobalTransform, Transform}, window::Window};
+use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, log::debug, math::Vec3, prelude::default, reflect::Reflect, render::{color::Color, mesh::Mesh, texture::Image}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::{Stopwatch, Time}, transform::components::{GlobalTransform, Transform}, window::Window};
 
 
 
@@ -33,7 +33,14 @@ pub struct Slowdown{
     rate: f32,
     count: f32
 }
-
+#[derive(Resource, Default)]
+pub struct PlayerData{
+    pub lives:i32,
+    pub points: i32,
+    pub power: f32,
+    pub iframes: bool,
+    timer: Stopwatch,
+}
 
 
 
@@ -43,7 +50,8 @@ pub struct Slowdown{
 pub fn physloop(mut transform: Query<(Entity, &mut Transform), With<Refplayerproj>>, slow: Res<Slowdown>, window: Query<&Window>, mut commands: Commands , playerpos:Query<&Transform, (With<Refplayer>, Without<Refplayerproj>)>){ 
     //Sets the movement speed on projectiles and other checks
 
-    if !transform.is_empty(){
+
+    if !transform.is_empty() {
         for (projent, mut projpos) in transform.iter_mut(){
 
             projpos.translation.y +=   (VELO*2.0) /  slow.rate;
@@ -87,13 +95,21 @@ pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Comm
 
 
 //initialize spawning player
-pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut meshes: ResMut<Assets<Mesh>>,mut materials: ResMut<Assets<bevy::sprite::ColorMaterial>>){
+pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<bevy::sprite::ColorMaterial>>
+    ,mut pd: ResMut<PlayerData>){
+    pd.lives = 3;
+    pd.power = 0.0;
+    pd.points = 0;
+    pd.iframes = false;
 
-    let x = commands.spawn(
-        ((MaterialMesh2dBundle
-            {mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: HITBOXRADIUS}))
-            , material: materials.add(Color::RED)
-            ,..default()}),PlayerhitboxComp)).id();
+
+
+    let x = commands.spawn((
+        SpriteBundle
+            {sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(HITBOXRADIUS,HITBOXRADIUS)), ..default()}
+            ,texture: asset_server.load::<Image>("embedded://Hitbox.png")
+            , ..Default::default()},PlayerhitboxComp)).id();
             //Adds a hitbox as a child
 
     commands.spawn(
@@ -119,17 +135,36 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut me
 
 // Calculates hitbox and makes enemy kill you
 
-pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>, enemy: Query<&Transform, With<Enemyproj>>){
+pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>, 
+    enemy: Query<&Transform, With<Enemyproj>>,mut pd:  ResMut<PlayerData>
+    ,time: Res<Time> ,mut player: Query<&mut Sprite, With<Refplayer>>, slowcheck: Res<Slowdown> ){
 
-
-    if !enemy.is_empty(){
+    
+    if !enemy.is_empty() && pd.iframes == false{
         for entity in enemy.iter(){
             if (origin.single().translation().distance(entity.translation)).round().abs() - ENEMYTESTPROJ <=  HITBOXRADIUS{
-                println!("test!")
+                pd.lives -= 1; //Lose life code
+                pd.iframes = true;
+                
             }
         }
     }
+    if pd.iframes == true{
+        pd.timer.tick(time.delta());
+        player.single_mut().color.set_a(0.2);
+
+        println!("IFRAME!");
+
+        if pd.timer.elapsed_secs().round() / slowcheck.rate  >= 5.0{
+            pd.iframes = false;
+            pd.timer.reset();
+            println!("{}", pd.lives);
+            player.single_mut().color.set_a(1.0);
+        }
+    }
+   
 }
+    
 
 
 
@@ -138,7 +173,9 @@ pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>, enemy:
 
 
 //Input loop and clamping
-pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, With<Refplayer>>, time: Res<Time>, mut slowcheck: ResMut<Slowdown>, windows: Query<&Window>){
+pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, With<Refplayer>>, time: Res<Time>
+    , mut slowcheck: ResMut<Slowdown>, windows: Query<&Window>
+    ,mut hitbox: Query<&mut Sprite, (With<PlayerhitboxComp>, Without<Refplayerproj>)>){
 
 
     
@@ -157,6 +194,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
 
     if key.pressed(KeyCode::ShiftLeft) || key.pressed(KeyCode::ControlLeft){ 
+        hitbox.single_mut().color.set_a(1.0);
         slowcheck.truefalsechecker = true;
         if slowcheck.rate < 5.0{
             slowcheck.rate = ramp_up_function(0.0, 1.5, 0.455, -3.1, 5.0, slowcheck.count);
@@ -183,7 +221,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
             slowcheck.count = 0.0;
         }
 
-
+        hitbox.single_mut().color.set_a(0.0);
     }
 
     if slowcheck.rate < 1.0{
