@@ -25,8 +25,8 @@ pub struct Enemyproj;
 const PLAYERSPRITESIZE: f32 = 32.0;
 const FIRERATE: f32 = 0.1;
 const VELO:f32 = 3.0;
-const HITBOXRADIUS:f32 = 30.0;
-const ENEMYTESTPROJ:f32 = 10.0;
+const HITBOXRADIUS:f32 = 15.0;
+const ENEMYTESTPROJ:f32 = 90.0;
 #[derive(Resource, Default)]
 pub struct Slowdown{
     truefalsechecker: bool,
@@ -95,8 +95,8 @@ pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Comm
 
 
 //initialize spawning player
-pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<bevy::sprite::ColorMaterial>>
+pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>
+
     ,mut pd: ResMut<PlayerData>){
     pd.lives = 3;
     pd.power = 0.0;
@@ -124,10 +124,10 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>, mut me
     
     
     commands.spawn(
-            ((MaterialMesh2dBundle
-                {mesh: Mesh2dHandle(meshes.add(bevy::math::primitives::Circle{radius: ENEMYTESTPROJ}))
-                , material: materials.add(Color::BLUE)
-                ,..default()}),Enemyproj));
+            ((SpriteBundle
+                {sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(ENEMYTESTPROJ,ENEMYTESTPROJ)), ..default()}
+                ,texture: asset_server.load::<Image>("embedded://Hitbox.png")
+                , ..Default::default()}),Enemyproj));
                 //test enemy proj
 }
     
@@ -142,7 +142,7 @@ pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>,
     
     if !enemy.is_empty() && pd.iframes == false{
         for entity in enemy.iter(){
-            if (origin.single().translation().distance(entity.translation)).round().abs() - ENEMYTESTPROJ <=  HITBOXRADIUS{
+            if (origin.single().translation().distance(entity.translation)).abs() <=  (ENEMYTESTPROJ + HITBOXRADIUS)/2. {
                 pd.lives -= 1; //Lose life code
                 pd.iframes = true;
                 
@@ -153,9 +153,17 @@ pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>,
         pd.timer.tick(time.delta());
         player.single_mut().color.set_a(0.2);
 
-        println!("IFRAME!");
+        
 
-        if pd.timer.elapsed_secs().round() / slowcheck.rate  >= 5.0{
+        if (pd.timer.elapsed_secs()*3.)%2. == 0.0{
+            player.single_mut().color.set_a(0.2);
+
+        }
+        else  if (pd.timer.elapsed_secs()*3.)%2. == 1.0{
+            player.single_mut().color.set_a(1.0);
+        }
+
+        if pd.timer.elapsed_secs() / slowcheck.rate  >= 5.0{
             pd.iframes = false;
             pd.timer.reset();
             println!("{}", pd.lives);
