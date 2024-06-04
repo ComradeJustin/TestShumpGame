@@ -40,6 +40,7 @@ pub struct PlayerData{
     pub power: f32,
     pub iframes: bool,
     timer: Stopwatch,
+
 }
 
 
@@ -139,7 +140,8 @@ pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>,
     enemy: Query<&Transform, With<Enemyproj>>,mut pd:  ResMut<PlayerData>
     ,time: Res<Time> ,mut player: Query<&mut Sprite, With<Refplayer>>, slowcheck: Res<Slowdown> ){
 
-    
+    let max:f32 = 100.0;
+
     if !enemy.is_empty() && pd.iframes == false{
         for entity in enemy.iter(){
             if (origin.single().translation().distance(entity.translation)).abs() <=  (ENEMYTESTPROJ + HITBOXRADIUS)/2. {
@@ -149,21 +151,28 @@ pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>,
             }
         }
     }
+
+
+
     if pd.iframes == true{
         pd.timer.tick(time.delta());
-        player.single_mut().color.set_a(0.2);
+        pd.timer.tick(time.delta());
+
+        if (((pd.timer.elapsed_secs() - pd.timer.elapsed_secs().round()).abs()*100.).round()*2.0) <= max/2.0 {
+            player.single_mut().color.set_a(1.0);
+        }
+        else if (((pd.timer.elapsed_secs() - pd.timer.elapsed_secs().round()).abs()*100.).round()*2.0) >= max/2.0{
+            player.single_mut().color.set_a(0.3);
+        }
 
         
 
-        if (pd.timer.elapsed_secs()*3.)%2. == 0.0{
-            player.single_mut().color.set_a(0.2);
+        println!("{}", (((pd.timer.elapsed_secs() - pd.timer.elapsed_secs().round()).abs()*100.).round()*2.0));
 
-        }
-        else  if (pd.timer.elapsed_secs()*3.)%2. == 1.0{
-            player.single_mut().color.set_a(1.0);
-        }
+        
 
         if pd.timer.elapsed_secs() / slowcheck.rate  >= 5.0{
+
             pd.iframes = false;
             pd.timer.reset();
             println!("{}", pd.lives);
