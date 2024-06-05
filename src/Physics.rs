@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, log::debug, math::Vec3, prelude::default, reflect::Reflect, render::{color::Color, mesh::Mesh, texture::Image}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::{Stopwatch, Time}, transform::components::{GlobalTransform, Transform}, window::Window};
+use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, event::{Event, EventReader, EventWriter}, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, log::debug, math::Vec3, prelude::default, reflect::Reflect, render::{color::Color, mesh::Mesh, texture::Image}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::{Stopwatch, Time}, transform::components::{GlobalTransform, Transform}, window::Window};
 
 
 
@@ -20,7 +20,8 @@ pub struct Shotcounter {
 pub struct Enemyproj;
 
 
-
+#[derive(Event)]
+pub struct PlayerVel(pub f32);
 
 const PLAYERSPRITESIZE: f32 = 32.0;
 const FIRERATE: f32 = 0.1;
@@ -31,8 +32,10 @@ const ENEMYTESTPROJ:f32 = 90.0;
 pub struct Slowdown{
     truefalsechecker: bool,
     rate: f32,
-    count: f32
+    count: f32,
+
 }
+
 #[derive(Resource, Default)]
 pub struct PlayerData{
     pub lives:i32,
@@ -47,16 +50,21 @@ pub struct PlayerData{
 
 
 
+
 //Projectile movement and lifetime
-pub fn physloop(mut transform: Query<(Entity, &mut Transform), With<Refplayerproj>>, slow: Res<Slowdown>, window: Query<&Window>, mut commands: Commands , playerpos:Query<&Transform, (With<Refplayer>, Without<Refplayerproj>)>){ 
+pub fn physloop(mut proj: Query<(Entity, &mut Transform), With<Refplayerproj>>, slow: Res<Slowdown>, window: Query<&Window>
+    ,mut commands: Commands 
+    ,mut ev_veloread: EventReader<PlayerVel>){ 
+    let mut speed:f32 = 0.0;
     //Sets the movement speed on projectiles and other checks
+    for ev in ev_veloread.read(){
+       speed = ev.0;
+    }
+    if !proj.is_empty() {
 
-
-    if !transform.is_empty() {
-        for (projent, mut projpos) in transform.iter_mut(){
-
-            projpos.translation.y +=   (VELO*2.0) /  slow.rate;
-             
+        for (projent, mut projpos) in proj.iter_mut(){
+            
+            projpos.translation.y += (VELO*2.0 + (speed*VELO)) /  slow.rate ;
             projpos.translation = projpos.translation.round();
 
 
@@ -68,6 +76,7 @@ pub fn physloop(mut transform: Query<(Entity, &mut Transform), With<Refplayerpro
 
         }
     }
+    
 
 
    
@@ -191,8 +200,9 @@ pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>,
 
 //Input loop and clamping
 pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, With<Refplayer>>, time: Res<Time>
-    , mut slowcheck: ResMut<Slowdown>, windows: Query<&Window>
-    ,mut hitbox: Query<&mut Sprite, (With<PlayerhitboxComp>, Without<Refplayerproj>)>){
+    ,mut slowcheck: ResMut<Slowdown>, windows: Query<&Window>
+    ,mut hitbox: Query<&mut Sprite, (With<PlayerhitboxComp>, Without<Refplayerproj>)>
+    ,mut ev_ismoving: EventWriter<PlayerVel>){
 
 
     
@@ -271,6 +281,14 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
         } 
         
         
+    if down{
+        ev_ismoving.send(PlayerVel(-1.0));
+
+    }
+    if up{
+        ev_ismoving.send(PlayerVel(1.0));
+
+    }
 
         // Diag movement check + calculation
     if (left || right) && (up || down) {
@@ -354,6 +372,8 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
         if up
         {
             playerpos.translation.y += 1.0  * VELO /slowcheck.rate *diry[1];
+
+
         }
 
         if down
@@ -361,6 +381,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
             playerpos.translation.y -= 1.0  * VELO /slowcheck.rate *diry[0]; 
 
         }
+        
     }
     playerpos.translation = playerpos.translation.round(); //Pixel perfect movement, as 1 unit in game is 1 unit in screen
 
@@ -378,6 +399,8 @@ pub struct Refplayerproj;
 //Spawn projectile
 pub fn projectile(mut commands: Commands,asset_server: Res<AssetServer>, pos: Vec3){
     let path = "embedded://R.png" ; 
+
+    //Give Individual ID to each single projectile based on 3 states: And then Compensate doppler effect based on that 
     commands.spawn((SpriteBundle{texture: asset_server.load::<Image>(path),transform: Transform::from_xyz(pos.x - PLAYERSPRITESIZE/3., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
     commands.spawn((SpriteBundle{texture: asset_server.load::<Image>(path),transform: Transform::from_xyz(pos.x + PLAYERSPRITESIZE/3., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
 }   

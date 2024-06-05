@@ -11,6 +11,8 @@ use bevy_embedded_assets::EmbeddedAssetPlugin;
 mod StageEvent;
 mod Physics;
 mod Ui;
+mod enemylogic;
+mod spawning;
 
 
 fn main() {
@@ -51,6 +53,7 @@ impl Plugin for StartupPlugin{
         app.init_resource::<Physics::Slowdown>();
         app.init_resource::<Physics::PlayerData>();
         app.init_resource::<Shotcounter>();
+        app.add_event::<Physics::PlayerVel>();
         app.add_systems(bevy::app::PreStartup, startup); // Runs Before Loading in
         app.add_systems(OnEnter(GameState::MainMenu), (Ui::render_title_screen, make_visible)); //Loads main Menu
         app.add_systems(PostUpdate, StageEvent::gamestatecheck);// Runs every frame since startup
