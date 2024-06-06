@@ -11,6 +11,10 @@ use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Ent
 
 #[derive(bevy::ecs::component::Component)]
 pub struct PlayerhitboxComp;
+#[derive(bevy::ecs::component::Component)]
+pub struct ProjectileSpeedDir{
+    speedfactor: f32,
+}
 
 #[derive(Resource, Default)]
 pub struct Shotcounter {
@@ -24,7 +28,7 @@ pub struct Enemyproj;
 pub struct PlayerVel(pub f32);
 
 const PLAYERSPRITESIZE: f32 = 32.0;
-const FIRERATE: f32 = 0.1;
+const FIRERATE: f32 = 0.13;
 const VELO:f32 = 3.0;
 const HITBOXRADIUS:f32 = 15.0;
 const ENEMYTESTPROJ:f32 = 90.0;
@@ -52,20 +56,18 @@ pub struct PlayerData{
 
 
 //Projectile movement and lifetime
-pub fn physloop(mut proj: Query<(Entity, &mut Transform), With<Refplayerproj>>, slow: Res<Slowdown>, window: Query<&Window>
-    ,mut commands: Commands 
-    ,mut ev_veloread: EventReader<PlayerVel>){ 
-    let mut speed:f32 = 0.0;
+pub fn physloop(mut proj: Query<(Entity, &mut Transform, &ProjectileSpeedDir), With<Refplayerproj>>, slow: Res<Slowdown>, window: Query<&Window>
+    ,mut commands: Commands ){ 
+    
     //Sets the movement speed on projectiles and other checks
-    for ev in ev_veloread.read(){
-       speed = ev.0;
-    }
+
     if !proj.is_empty() {
 
-        for (projent, mut projpos) in proj.iter_mut(){
+        for (projent, mut projpos   , dir) in proj.iter_mut(){
             
-            projpos.translation.y += (VELO*2.0 + (speed*VELO)) /  slow.rate ;
-            projpos.translation = projpos.translation.round();
+            projpos.translation.y += (6.+ dir.speedfactor ) /  slow.rate ;
+
+            projpos.translation = (projpos.translation*10.).round()/10.;
 
 
 
@@ -82,14 +84,25 @@ pub fn physloop(mut proj: Query<(Entity, &mut Transform), With<Refplayerproj>>, 
    
 }
 //Timer for firing
-pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Commands,asset_server: Res<AssetServer>,x: Query<&mut Transform, With<Refplayer>>,slow: Res<Slowdown>){ //Sets firerate
-    let mut pos = x.single().translation.round();
+pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Commands,
+    asset_server: Res<AssetServer>,x: Query<&mut Transform, With<Refplayer>>,slow: Res<Slowdown>
+    ,mut ev_veloread: EventReader<PlayerVel>){ //Sets firerate
 
+    
+    
+    let mut pos = x.single().translation.round();
     if counter.timesincelastshot + FIRERATE * slow.rate  <= time.elapsed_seconds_wrapped() {//Fire rate added  with delay
         counter.timesincelastshot = time.elapsed_seconds_wrapped();
         pos.y = PLAYERSPRITESIZE/2. + pos.y + 2.0;
         pos.z = x.single().translation.z - 10.0;
-        projectile(commands, asset_server, pos)
+        if !ev_veloread.is_empty(){
+
+            projectile(commands, asset_server, pos, ev_veloread.read().peekable().peek().unwrap().0)
+        }
+        else {
+            projectile(commands, asset_server, pos, 0.0)
+        }
+        
     }
 
 
@@ -167,11 +180,17 @@ pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>,
         pd.timer.tick(time.delta());
         pd.timer.tick(time.delta());
 
-        if (((pd.timer.elapsed_secs() - pd.timer.elapsed_secs().round()).abs()*100.).round()*2.0) <= max/2.0 {
+        if (((pd.timer.elapsed_secs() - pd.timer.elapsed_secs().round()).abs()*100.).round()*2.0)  <= max/2.0 {
             player.single_mut().color.set_a(1.0);
+            player.single_mut().color.set_r(1.0);
+            player.single_mut().color.set_g(1.0);
+            player.single_mut().color.set_b(1.0);
         }
-        else if (((pd.timer.elapsed_secs() - pd.timer.elapsed_secs().round()).abs()*100.).round()*2.0) >= max/2.0{
-            player.single_mut().color.set_a(0.3);
+        else if (((pd.timer.elapsed_secs() - pd.timer.elapsed_secs().round()).abs()*100.).round()*2.0)  >= max/2.0{
+            player.single_mut().color.set_a(0.2);
+            player.single_mut().color.set_r(1.0);
+            player.single_mut().color.set_g(0.0);
+            player.single_mut().color.set_b(0.0);
         }
 
         
@@ -185,6 +204,9 @@ pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>,
             pd.iframes = false;
             pd.timer.reset();
             println!("{}", pd.lives);
+            player.single_mut().color.set_r(1.0);
+            player.single_mut().color.set_g(1.0);
+            player.single_mut().color.set_b(1.0);
             player.single_mut().color.set_a(1.0);
         }
     }
@@ -265,32 +287,25 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
     let playerclamp = [playerpos.translation.x - PLAYERSPRITESIZE/2., playerpos.translation.x + PLAYERSPRITESIZE/2., playerpos.translation.y - PLAYERSPRITESIZE/2., playerpos.translation.y + PLAYERSPRITESIZE/2. ];
     if playerclamp[2] <= -windowbox[0]{//Bottom border
         diry[0] = 0.;
-        playerpos.translation.y = -windowbox[0] + PLAYERSPRITESIZE/2.;
+        playerpos.translation.y = (-windowbox[0] + PLAYERSPRITESIZE/2.).round();
         }   
     if playerclamp[3] >= windowbox[0]{//Top border
         diry[1] = 0.;
-        playerpos.translation.y = windowbox[0] - PLAYERSPRITESIZE/2.;
+        playerpos.translation.y = (windowbox[0] - PLAYERSPRITESIZE/2.).round();
         }
     if playerclamp[1] >= windowbox[1]{//Right border
         dirx[1] = 0.;
-        playerpos.translation.x = windowbox[1] - PLAYERSPRITESIZE/2.;
+        playerpos.translation.x = (windowbox[1] - PLAYERSPRITESIZE/2.).round();
         } 
     if playerclamp[0] <= -windowbox[1]{//Left border
         dirx[0] = 0.;
-        playerpos.translation.x = -windowbox[1] + PLAYERSPRITESIZE/2.;
+        playerpos.translation.x = (-windowbox[1] + PLAYERSPRITESIZE/2.).round();
         } 
         
-        
-    if down{
-        ev_ismoving.send(PlayerVel(-1.0));
 
-    }
-    if up{
-        ev_ismoving.send(PlayerVel(1.0));
 
-    }
 
-        // Diag movement check + calculation
+    // Diag movement check + calculation
     if (left || right) && (up || down) {
 
 
@@ -299,16 +314,18 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
             {
                 playerpos.translation.x -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[0];
                 playerpos.translation.y += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[1];
-                
+                ev_ismoving.send(PlayerVel((VELO*2.).sqrt()*2_f32.sqrt()));
 
             }
             else 
             {
                 if up && left && down{
                     playerpos.translation.x -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[0];
+
                 }
                 if up && left && right{
                     playerpos.translation.y += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[1];
+                    ev_ismoving.send(PlayerVel((VELO*2.).sqrt()*2_f32.sqrt()));
                 }
             }
 
@@ -318,6 +335,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
             if up && right && !down && !left{
                 playerpos.translation.x += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[1];
                 playerpos.translation.y += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[1];
+                ev_ismoving.send(PlayerVel((VELO*2.).sqrt()*2_f32.sqrt()));
             }
             
 
@@ -328,11 +346,13 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
             {
                 playerpos.translation.x += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[1];
                 playerpos.translation.y -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[0];
+                ev_ismoving.send(PlayerVel(-((VELO*2.).sqrt()*2_f32.sqrt())));
             }
             else 
             {
                 if right && left && down{
                     playerpos.translation.y -=(VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[0];
+                    ev_ismoving.send(PlayerVel(-((VELO*2.).sqrt()*2_f32.sqrt())));
                 }
                 if up && down && right{
                     playerpos.translation.x += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[1];
@@ -343,6 +363,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
             if down && left && !up && !right
             {
+                ev_ismoving.send(PlayerVel(-((VELO*2.).sqrt()*2_f32.sqrt())));
                 playerpos.translation.x -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[0];
                 playerpos.translation.y -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[0];
             }
@@ -372,13 +393,14 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
         if up
         {
             playerpos.translation.y += 1.0  * VELO /slowcheck.rate *diry[1];
-
+            ev_ismoving.send(PlayerVel(VELO));
 
         }
 
         if down
         {
             playerpos.translation.y -= 1.0  * VELO /slowcheck.rate *diry[0]; 
+            ev_ismoving.send(PlayerVel(-VELO));
 
         }
         
@@ -397,12 +419,24 @@ pub struct Refplayer;
 #[derive(bevy::ecs::component::Component)]
 pub struct Refplayerproj;
 //Spawn projectile
-pub fn projectile(mut commands: Commands,asset_server: Res<AssetServer>, pos: Vec3){
+pub fn projectile(mut commands: Commands,asset_server: Res<AssetServer>, pos: Vec3, id: f32){
     let path = "embedded://R.png" ; 
 
     //Give Individual ID to each single projectile based on 3 states: And then Compensate doppler effect based on that 
-    commands.spawn((SpriteBundle{texture: asset_server.load::<Image>(path),transform: Transform::from_xyz(pos.x - PLAYERSPRITESIZE/3., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
-    commands.spawn((SpriteBundle{texture: asset_server.load::<Image>(path),transform: Transform::from_xyz(pos.x + PLAYERSPRITESIZE/3., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()},Refplayerproj));
+    commands.spawn((SpriteBundle{texture: asset_server.load::<Image>(path),transform: Transform::from_xyz(pos.x - PLAYERSPRITESIZE/3., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()}
+    ,Refplayerproj, ProjectileSpeedDir{speedfactor: id}));
+    
+    commands.spawn(
+        (SpriteBundle
+            {texture: asset_server.load::<Image>(path)
+            ,transform: Transform::from_xyz(pos.x + PLAYERSPRITESIZE/3., pos.y, pos.z)
+            , sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.))
+            , ..Default::default()}}
+            ,..Default::default()},Refplayerproj,ProjectileSpeedDir{speedfactor: id }));
+
+
+
+
 }   
 
 fn ramp_up_function(a:f32, s:f32, h:f32, v:f32, c:f32, time:f32) -> f32{ //My favorite function (Modified Logistic curve)
