@@ -47,6 +47,7 @@ pub struct PlayerData{
     pub power: f32,
     pub iframes: bool,
     timer: Stopwatch,
+    flash: Stopwatch,
 
 }
 
@@ -177,16 +178,24 @@ pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>,
 
 
     if pd.iframes == true{
-        pd.timer.tick(time.delta());
-        pd.timer.tick(time.delta());
 
-        if (((pd.timer.elapsed_secs() - pd.timer.elapsed_secs().round()).abs()*100.).round()*2.0)  <= max/2.0 {
+
+        if (pd.flash.elapsed_secs()*300./slowcheck.rate).clamp(max/2., max) >= max{
+            pd.flash.reset()
+        }
+        pd.timer.tick(time.delta());
+        pd.flash.tick(time.delta());
+
+
+
+
+        if (pd.flash.elapsed_secs()*300./slowcheck.rate).clamp(max/2., max)  > max/2.0 {
             player.single_mut().color.set_a(1.0);
             player.single_mut().color.set_r(1.0);
             player.single_mut().color.set_g(1.0);
             player.single_mut().color.set_b(1.0);
         }
-        else if (((pd.timer.elapsed_secs() - pd.timer.elapsed_secs().round()).abs()*100.).round()*2.0)  >= max/2.0{
+        else if (pd.flash.elapsed_secs()*300./slowcheck.rate).clamp(0.0, max/2.)  < max/2. {
             player.single_mut().color.set_a(0.2);
             player.single_mut().color.set_r(1.0);
             player.single_mut().color.set_g(0.0);
@@ -195,12 +204,21 @@ pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>,
 
         
 
-        println!("{}", (((pd.timer.elapsed_secs() - pd.timer.elapsed_secs().round()).abs()*100.).round()*2.0));
+        println!("{}, {}", 
+
+
+        (pd.flash.elapsed_secs()*300./slowcheck.rate).clamp(0.0, max/2.),
+        (pd.flash.elapsed_secs()*300./slowcheck.rate).clamp(max/2., max)
+
+        
+    
+    );
+        
 
         
 
         if pd.timer.elapsed_secs() / slowcheck.rate  >= 5.0{
-
+            pd.flash.reset();
             pd.iframes = false;
             pd.timer.reset();
             println!("{}", pd.lives);
@@ -256,8 +274,15 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
             slowcheck.count += 0.01_f32.log(time.delta_seconds())/20.0    ;
         }
 
+        playerpos.translation = (playerpos.translation*10.).round()/10.;
+
+
     }
     else {
+        playerpos.translation = playerpos.translation.round();
+
+
+
         if slowcheck.truefalsechecker == true{
             slowcheck.count = slowcheck.count/5.0
         }
@@ -405,7 +430,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
         }
         
     }
-    playerpos.translation = playerpos.translation.round(); //Pixel perfect movement, as 1 unit in game is 1 unit in screen
+     //Pixel perfect movement, as 1 unit in game is 1 unit in screen
 
 
 }
