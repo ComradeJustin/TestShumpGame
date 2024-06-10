@@ -68,7 +68,8 @@ pub fn physloop(mut proj: Query<(Entity, &mut Transform, &ProjectileSpeedDir), W
             
             projpos.translation.y += (6.+ dir.speedfactor ) /  slow.rate ;
 
-            projpos.translation = (projpos.translation*10.).round()/10.;
+            projpos.translation.y = (projpos.translation.y*10.).round()/10.;
+            projpos.translation.x = projpos.translation.x.round();
 
 
 
@@ -308,7 +309,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
   
     //Clamping to screen
 
-    let windowbox = [window.height()/2., window.width()/2.];
+    let windowbox = [window.physical_height() as f32/2., window.physical_width() as f32/2.];
     let playerclamp = [playerpos.translation.x - PLAYERSPRITESIZE/2., playerpos.translation.x + PLAYERSPRITESIZE/2., playerpos.translation.y - PLAYERSPRITESIZE/2., playerpos.translation.y + PLAYERSPRITESIZE/2. ];
     if playerclamp[2] <= -windowbox[0]{//Bottom border
         diry[0] = 0.;

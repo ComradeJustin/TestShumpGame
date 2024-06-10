@@ -53,7 +53,7 @@ impl Plugin for StartupPlugin{
         app.init_resource::<Physics::Slowdown>();
         app.init_resource::<Physics::PlayerData>();
         app.init_resource::<Shotcounter>();
-        app.add_event::<Physics::PlayerVel>();
+       
         app.add_systems(bevy::app::PreStartup, startup); // Runs Before Loading in
         app.add_systems(OnEnter(GameState::MainMenu), (Ui::render_title_screen, make_visible)); //Loads main Menu
         app.add_systems(PostUpdate, StageEvent::gamestatecheck);// Runs every frame since startup
@@ -65,9 +65,12 @@ impl Plugin for StartupPlugin{
 struct MaingamePlugin;
 impl Plugin for MaingamePlugin{
     fn build(&self, app: &mut App) {
+        app.add_event::<Physics::PlayerVel>();
         app.add_systems(OnEnter(GameState::InGame), spawnplayer); //Spawns player on entering states
-
-        app.add_systems(FixedUpdate, (Physics::gethitbox,Physics::physloop,Physics::input,Physics::guntimer).run_if(in_state(GameState::InGame)));
+        app.add_systems(FixedUpdate, (Physics::gethitbox,Physics::physloop,Physics::input,Physics::guntimer)
+        .run_if(in_state(GameState::InGame)));
+        app.add_event::<enemylogic::EnemyShoot>();
+        app.add_systems(FixedUpdate, (enemylogic::pattern, enemylogic::reader).run_if(in_state(GameState::InGame)));
         //Runs the main Game schedule using fixed update to improve jitteryness
     }
 }
