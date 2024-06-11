@@ -31,7 +31,7 @@ const PLAYERSPRITESIZE: f32 = 32.0;
 const FIRERATE: f32 = 0.13;
 const VELO:f32 = 3.0;
 const HITBOXRADIUS:f32 = 15.0;
-const ENEMYTESTPROJ:f32 = 90.0;
+pub const ENEMYTESTPROJ:f32 = 90.0;
 #[derive(Resource, Default)]
 pub struct Slowdown{
     truefalsechecker: bool,
@@ -120,9 +120,7 @@ pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Comm
 
 
 //initialize spawning player
-pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>
-
-    ,mut pd: ResMut<PlayerData>){
+pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>,mut pd: ResMut<PlayerData>){
     pd.lives = 3;
     pd.power = 0.0;
     pd.points = 0;
@@ -148,12 +146,7 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>
     
     
     
-    commands.spawn(
-            ((SpriteBundle
-                {sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(ENEMYTESTPROJ,ENEMYTESTPROJ)), ..default()}
-                ,texture: asset_server.load::<Image>("embedded://Hitbox.png")
-                , ..Default::default()}),Enemyproj));
-                //test enemy proj
+
 }
     
 
@@ -275,15 +268,15 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
             slowcheck.count += 0.01_f32.log(time.delta_seconds())/20.0    ;
         }
 
-        playerpos.translation = (playerpos.translation*10.).round()/10.;
+        playerpos.translation = (playerpos.translation*1000.).round()/1000.;
 
 
     }
     else {
-        playerpos.translation = playerpos.translation.round();
 
 
 
+        playerpos.translation = playerpos.translation.round();  //Pixel perfect movement, as 1 unit in game is 1 unit in screen
         if slowcheck.truefalsechecker == true{
             slowcheck.count = slowcheck.count/5.0
         }
@@ -431,7 +424,7 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
         }
         
     }
-     //Pixel perfect movement, as 1 unit in game is 1 unit in screen
+    
 
 
 }

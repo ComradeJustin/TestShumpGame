@@ -69,8 +69,11 @@ impl Plugin for MaingamePlugin{
         app.add_systems(OnEnter(GameState::InGame), spawnplayer); //Spawns player on entering states
         app.add_systems(FixedUpdate, (Physics::gethitbox,Physics::physloop,Physics::input,Physics::guntimer)
         .run_if(in_state(GameState::InGame)));
+        app.init_resource::<enemylogic::Firingtimer>();
+        
         app.add_event::<enemylogic::EnemyShoot>();
-        app.add_systems(FixedUpdate, (enemylogic::pattern, enemylogic::reader).run_if(in_state(GameState::InGame)));
+        app.add_event::<enemylogic::AttackType>();
+        app.add_systems(FixedUpdate, (enemylogic::pattern, enemylogic::reader, enemylogic::projectilespawnpattern).run_if(in_state(GameState::InGame)));
         //Runs the main Game schedule using fixed update to improve jitteryness
     }
 }
