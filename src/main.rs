@@ -70,10 +70,10 @@ impl Plugin for MaingamePlugin{
         app.add_systems(FixedUpdate, (Physics::gethitbox,Physics::physloop,Physics::input,Physics::guntimer)
         .run_if(in_state(GameState::InGame)));
         app.init_resource::<enemylogic::Firingtimer>();
-        
+        app.init_resource::<enemylogic::rotationaltime>();
         app.add_event::<enemylogic::EnemyShoot>();
         app.add_event::<enemylogic::AttackType>();
-        app.add_systems(FixedUpdate, (enemylogic::pattern, enemylogic::reader, enemylogic::projectilespawnpattern).run_if(in_state(GameState::InGame)));
+        app.add_systems(FixedUpdate, (enemylogic::despawnprojectile,enemylogic::movementpattern,enemylogic::attackreg, enemylogic::reader, enemylogic::projectilespawner).run_if(in_state(GameState::InGame)));
         //Runs the main Game schedule using fixed update to improve jitteryness
     }
 }

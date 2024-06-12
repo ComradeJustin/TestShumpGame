@@ -21,7 +21,12 @@ pub struct Shotcounter {
     timesincelastshot: f32
 }
 #[derive(Component, Default)]
-pub struct Enemyproj;
+pub struct Enemyproj{
+    pub bullettype:i8,
+    pub id: i32,
+    pub angle: f32
+}
+
 
 
 #[derive(Event)]
@@ -73,7 +78,7 @@ pub fn physloop(mut proj: Query<(Entity, &mut Transform, &ProjectileSpeedDir), W
 
 
 
-            if projpos.translation.y > window.single().height()/2.{
+            if projpos.translation.y > window.single().physical_height() as f32/2.{
                 commands.entity(projent).despawn();
 
             }
