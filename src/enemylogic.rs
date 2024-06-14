@@ -1,8 +1,9 @@
-use std::f32::consts;
+use std::f32::consts::{self, PI};
 
 use bevy::asset::AssetServer;
 use bevy::math::Vec3;
 use bevy::prelude::{Component, Entity, With};
+use bevy::time::Stopwatch;
 use bevy::transform::components::Transform;
 use bevy::utils::default;
 
@@ -26,7 +27,9 @@ pub struct RotationCount{
 
 #[derive(Resource, Default)]
 pub struct Firingtimer{
-    time:Timer
+    time:Stopwatch,
+    count: f32,
+    id: i32
 }
 pub fn attackreg(mut firingevent: EventReader<EnemyShoot>, mut firingtype: EventWriter<AttackType> ){
     if !firingevent.is_empty(){
@@ -43,36 +46,43 @@ pub fn attackreg(mut firingevent: EventReader<EnemyShoot>, mut firingtype: Event
 }
 pub fn reader(mut sendev: EventWriter<EnemyShoot>, key:  Res<ButtonInput<KeyCode>>){
     if key.just_pressed(KeyCode::KeyK){
-        let mut x:i8 = 1;
-        while x <= 40{
-            x += 1;
-            sendev.send(EnemyShoot(1));
-        }
+        sendev.send(EnemyShoot(1));
         
     }
 }
-pub fn projectilespawner(mut rotation: ResMut<RotationCount>,mut cmd: Commands, mut timer: ResMut<Firingtimer>, time: Res<Time>, mut attacktype: EventReader<AttackType>,asset_server: Res<AssetServer>){
+pub fn projectilespawner(slow: Res<Physics::Slowdown>,mut rotation: ResMut<RotationCount>,mut cmd: Commands, mut timer: ResMut<Firingtimer>, time: Res<Time>, mut attacktype: EventReader<AttackType>,asset_server: Res<AssetServer>){
 
-    
-    if !attacktype.is_empty(){
-        let mut x:i32 = 0;
+        
         timer.time.tick(time.delta());
-        for ite in attacktype.read(){
+        println!("{}", timer.time.elapsed_secs());
+        if (timer.time.elapsed_secs() *1000.).round() / 1000.0 / slow.rate >= 0.05{
+            timer.count += 1.0;
+            timer.id += 1;
+            rotation.angle += consts::PI/(timer.count*30.);
+            
 
 
-            rotation.angle += consts::PI /15. + rand::thread_rng().gen_range(0..10) as f32 / 10.;
-            x+=1;
+        
             cmd.spawn(((SpriteBundle
-                {sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(Physics::ENEMYTESTPROJ,Physics::ENEMYTESTPROJ)), ..default()}
-                ,texture: asset_server.load::<Image>("embedded://Hitbox.png"),transform: Transform::from_xyz(0.0, 0.0, 1.0)  
-                , ..Default::default()}),Physics::Enemyproj {bullettype: ite.0, id: x, angle: rotation.angle}, Projectileref));
+            {sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(Physics::ENEMYTESTPROJ,Physics::ENEMYTESTPROJ)), ..default()}
+            ,texture: asset_server.load::<Image>("embedded://Hitbox.png"),transform: Transform::from_xyz(0.0, 0.0, 1.0)  
+            , ..Default::default()}),Physics::Enemyproj {bullettype: 1, id: timer.id , angle: rotation.angle}, Projectileref));
+            if rotation.angle > 2. * consts::PI{
+                rotation.angle = 0.;
+            }
+            if timer.count >= 10.{
+                timer.count = 1.0
+            }
+            timer.time.reset()
         }
+       
+        
        
         
     }
 
 
-}
+
 pub fn movementpattern(mut projectilequery: Query<(&mut Transform, &Physics::Enemyproj), With<Projectileref>>, slow: Res<Physics::Slowdown>){
     
 
@@ -81,8 +91,8 @@ pub fn movementpattern(mut projectilequery: Query<(&mut Transform, &Physics::Ene
         for mut pos in projectilequery.iter_mut(){
             
             pos.0.translation += Vec3::new(pos.1.angle.cos() / slow.rate,pos.1.angle.sin() / slow.rate, 0.0);
-            pos.0.translation.x = (pos.0.translation.x * 100.0).round() /100.0 ;
-            pos.0.translation.y = (pos.0.translation.y * 100.0).round() /100.0 ;
+            pos.0.translation.x = (pos.0.translation.x * 1000.0).round() /1000.0 ;
+            pos.0.translation.y = (pos.0.translation.y * 1000.0).round() /1000.0 ;
         }
     }
 

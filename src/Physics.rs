@@ -34,7 +34,7 @@ pub struct PlayerVel(pub f32);
 
 const PLAYERSPRITESIZE: f32 = 32.0;
 const FIRERATE: f32 = 0.13;
-const VELO:f32 = 3.0;
+const VELO:f32 = 2.0;
 const HITBOXRADIUS:f32 = 15.0;
 pub const ENEMYTESTPROJ:f32 = 30.0;
 #[derive(Resource, Default)]
@@ -336,20 +336,20 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
             if up && left && !down && !right 
             {
-                playerpos.translation.x -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[0];
-                playerpos.translation.y += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[1];
-                ev_ismoving.send(PlayerVel((VELO*2.).sqrt()*2_f32.sqrt()));
+                playerpos.translation.x -= (VELO*2.).sqrt() /slowcheck.rate * dirx[0];
+                playerpos.translation.y += (VELO*2.).sqrt() /slowcheck.rate *diry[1];
+                ev_ismoving.send(PlayerVel((VELO*2.).sqrt()));
 
             }
             else 
             {
                 if up && left && down{
-                    playerpos.translation.x -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[0];
+                    playerpos.translation.x -= (VELO*2.).sqrt() /slowcheck.rate * dirx[0];
 
                 }
                 if up && left && right{
-                    playerpos.translation.y += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[1];
-                    ev_ismoving.send(PlayerVel((VELO*2.).sqrt()*2_f32.sqrt()));
+                    playerpos.translation.y += (VELO*2.).sqrt() /slowcheck.rate *diry[1];
+                    ev_ismoving.send(PlayerVel((VELO*2.).sqrt()));
                 }
             }
 
@@ -357,9 +357,9 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
 
             if up && right && !down && !left{
-                playerpos.translation.x += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[1];
-                playerpos.translation.y += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[1];
-                ev_ismoving.send(PlayerVel((VELO*2.).sqrt()*2_f32.sqrt()));
+                playerpos.translation.x += (VELO*2.).sqrt() /slowcheck.rate * dirx[1];
+                playerpos.translation.y += (VELO*2.).sqrt() /slowcheck.rate *diry[1];
+                ev_ismoving.send(PlayerVel((VELO*2.).sqrt()));
             }
             
 
@@ -368,18 +368,18 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
             if down && right && !up && !left  
             {
-                playerpos.translation.x += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[1];
-                playerpos.translation.y -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[0];
-                ev_ismoving.send(PlayerVel(-((VELO*2.).sqrt()*2_f32.sqrt())));
+                playerpos.translation.x += (VELO*2.).sqrt() /slowcheck.rate * dirx[1];
+                playerpos.translation.y -= (VELO*2.).sqrt() /slowcheck.rate *diry[0];
+                ev_ismoving.send(PlayerVel(-((VELO*2.).sqrt())));
             }
             else 
             {
                 if right && left && down{
-                    playerpos.translation.y -=(VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[0];
-                    ev_ismoving.send(PlayerVel(-((VELO*2.).sqrt()*2_f32.sqrt())));
+                    playerpos.translation.y -=(VELO*2.).sqrt() /slowcheck.rate *diry[0];
+                    ev_ismoving.send(PlayerVel(-((VELO*2.).sqrt())));
                 }
                 if up && down && right{
-                    playerpos.translation.x += (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[1];
+                    playerpos.translation.x += (VELO*2.).sqrt() /slowcheck.rate * dirx[1];
                 }
             }
 
@@ -387,9 +387,9 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
             if down && left && !up && !right
             {
-                ev_ismoving.send(PlayerVel(-((VELO*2.).sqrt()*2_f32.sqrt())));
-                playerpos.translation.x -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate * dirx[0];
-                playerpos.translation.y -= (VELO*2.).sqrt()*2_f32.sqrt() /slowcheck.rate *diry[0];
+                ev_ismoving.send(PlayerVel(-((VELO*2.).sqrt())));
+                playerpos.translation.x -= (VELO*2.).sqrt() /slowcheck.rate * dirx[0];
+                playerpos.translation.y -= (VELO*2.).sqrt() /slowcheck.rate *diry[0];
             }
     }
 
