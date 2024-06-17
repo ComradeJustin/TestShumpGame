@@ -8,7 +8,7 @@ use bevy::transform::components::Transform;
 use bevy::utils::default;
 
 use bevy::{input::ButtonInput, prelude::{Commands, Event, EventReader, EventWriter, KeyCode, Query, Res, ResMut, Resource}, render::texture::Image, sprite::{Sprite, SpriteBundle}, time::{Time, Timer}};
-use rand::{self, Rng};
+
 use super::Physics;
 
 #[derive(Event,Default)]
@@ -22,13 +22,14 @@ pub struct Projectileref;
 #[derive(Resource, Default)]
 pub struct RotationCount{
     angle: f32,
+    shift: f32,
 }
 
 
 #[derive(Resource, Default)]
 pub struct Firingtimer{
     time:Stopwatch,
-    count: f32,
+
     id: i32
 }
 pub fn attackreg(mut firingevent: EventReader<EnemyShoot>, mut firingtype: EventWriter<AttackType> ){
@@ -54,31 +55,32 @@ pub fn projectilespawner(slow: Res<Physics::Slowdown>,mut rotation: ResMut<Rotat
 
         
         timer.time.tick(time.delta());
-        println!("{}", timer.time.elapsed_secs());
-        if (timer.time.elapsed_secs() *1000.).round() / 1000.0 / slow.rate >= 0.05{
-            timer.count += 1.0;
+
+        if (timer.time.elapsed_secs() *1000.).round() / 1000.0 / slow.rate >= 0.02{
+
             timer.id += 1;
-            rotation.angle += consts::PI/(timer.count*30.);
-            
+            rotation.angle += consts::PI/10.; 
+
 
 
         
-            cmd.spawn(((SpriteBundle
-            {sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(Physics::ENEMYTESTPROJ,Physics::ENEMYTESTPROJ)), ..default()}
-            ,texture: asset_server.load::<Image>("embedded://Hitbox.png"),transform: Transform::from_xyz(0.0, 0.0, 1.0)  
-            , ..Default::default()}),Physics::Enemyproj {bullettype: 1, id: timer.id , angle: rotation.angle}, Projectileref));
-            if rotation.angle > 2. * consts::PI{
+           
+            if rotation.angle > consts::PI * 2.{
                 rotation.angle = 0.;
+                rotation.shift += consts::PI/15.;
             }
-            if timer.count >= 10.{
-                timer.count = 1.0
+            if rotation.shift >= consts::PI * 2.{
+                rotation.shift = 0.0
             }
-            timer.time.reset()
+
+           
+            cmd.spawn(((SpriteBundle
+                {sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(Physics::ENEMYTESTPROJ,Physics::ENEMYTESTPROJ)), ..default()}
+                ,texture: asset_server.load::<Image>("embedded://Hitbox.png"),transform: Transform::from_xyz(0.0, 0.0, 1.0)  
+                , ..Default::default()}),Physics::Enemyproj {bullettype: 1, id: timer.id , angle: rotation.angle  + rotation.shift }, Projectileref));
+            timer.time.reset();
         }
-       
-        
-       
-        
+
     }
 
 
@@ -89,10 +91,10 @@ pub fn movementpattern(mut projectilequery: Query<(&mut Transform, &Physics::Ene
     if !projectilequery.is_empty(){
 
         for mut pos in projectilequery.iter_mut(){
-            
-            pos.0.translation += Vec3::new(pos.1.angle.cos() / slow.rate,pos.1.angle.sin() / slow.rate, 0.0);
+
             pos.0.translation.x = (pos.0.translation.x * 1000.0).round() /1000.0 ;
             pos.0.translation.y = (pos.0.translation.y * 1000.0).round() /1000.0 ;
+            pos.0.translation += Vec3::new(pos.1.angle.cos() / slow.rate,pos.1.angle.sin() / slow.rate, 0.0);
         }
     }
 

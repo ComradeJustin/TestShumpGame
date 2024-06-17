@@ -53,7 +53,7 @@ impl Plugin for StartupPlugin{
         app.init_resource::<Physics::Slowdown>();
         app.init_resource::<Physics::PlayerData>();
         app.init_resource::<Shotcounter>();
-       
+        
         app.add_systems(bevy::app::PreStartup, startup); // Runs Before Loading in
         app.add_systems(OnEnter(GameState::MainMenu), (Ui::render_title_screen, make_visible)); //Loads main Menu
         app.add_systems(PostUpdate, StageEvent::gamestatecheck);// Runs every frame since startup
@@ -91,8 +91,9 @@ fn make_visible(mut window: Query<&mut Window>) { //Temp, add loading screen.
 
 
 
-fn startup(mut commands: Commands){
+fn startup(mut commands: Commands, windows: Query<&Window>){
     
+
 
     
     let cam = Camera2dBundle {

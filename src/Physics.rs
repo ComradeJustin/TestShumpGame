@@ -35,8 +35,8 @@ pub struct PlayerVel(pub f32);
 const PLAYERSPRITESIZE: f32 = 32.0;
 const FIRERATE: f32 = 0.13;
 const VELO:f32 = 2.0;
-const HITBOXRADIUS:f32 = 15.0;
-pub const ENEMYTESTPROJ:f32 = 30.0;
+const HITBOXRADIUS:f32 = 10.0;
+pub const ENEMYTESTPROJ:f32 = 24.0;
 #[derive(Resource, Default)]
 pub struct Slowdown{
     truefalsechecker: bool,
