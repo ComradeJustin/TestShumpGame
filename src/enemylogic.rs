@@ -2,7 +2,7 @@ use std::f32::consts::{self, PI};
 
 use bevy::asset::AssetServer;
 use bevy::math::Vec3;
-use bevy::prelude::{Component, Entity, With};
+use bevy::prelude::{Component, Entity, NextState, With, Without};
 use bevy::time::Stopwatch;
 use bevy::transform::components::Transform;
 use bevy::utils::default;
@@ -10,7 +10,7 @@ use bevy::utils::default;
 use bevy::{input::ButtonInput, prelude::{Commands, Event, EventReader, EventWriter, KeyCode, Query, Res, ResMut, Resource}, render::texture::Image, sprite::{Sprite, SpriteBundle}, time::{Time, Timer}};
 
 use super::Physics;
-
+use super::StageEvent;
 #[derive(Event,Default)]
 pub struct EnemyShoot(pub i8);
 
@@ -45,10 +45,12 @@ pub fn attackreg(mut firingevent: EventReader<EnemyShoot>, mut firingtype: Event
     
     
 }
-pub fn reader(mut sendev: EventWriter<EnemyShoot>, key:  Res<ButtonInput<KeyCode>>){
+pub fn reader(mut sendev: EventWriter<EnemyShoot>, key:  Res<ButtonInput<KeyCode>>
+    , mut change_state: ResMut<NextState<StageEvent::GameState>>){
     if key.just_pressed(KeyCode::KeyK){
         sendev.send(EnemyShoot(1));
-        
+        change_state.set(StageEvent::GameState::MainMenu);
+
     }
 }
 pub fn projectilespawner(slow: Res<Physics::Slowdown>,mut rotation: ResMut<RotationCount>,mut cmd: Commands, mut timer: ResMut<Firingtimer>, time: Res<Time>, mut attacktype: EventReader<AttackType>,asset_server: Res<AssetServer>){

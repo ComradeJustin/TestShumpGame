@@ -56,7 +56,7 @@ impl Plugin for StartupPlugin{
         
         app.add_systems(bevy::app::PreStartup, startup); // Runs Before Loading in
         app.add_systems(OnEnter(GameState::MainMenu), (Ui::render_title_screen, make_visible)); //Loads main Menu
-        app.add_systems(PostUpdate, StageEvent::gamestatecheck);// Runs every frame since startup
+        app.add_systems(FixedUpdate, StageEvent::gamestatecheck);// Runs every frame since startup
        
 
     }
@@ -65,16 +65,34 @@ impl Plugin for StartupPlugin{
 struct MaingamePlugin;
 impl Plugin for MaingamePlugin{
     fn build(&self, app: &mut App) {
+
         app.add_event::<Physics::PlayerVel>();
+
         app.add_systems(OnEnter(GameState::InGame), spawnplayer); //Spawns player on entering states
-        app.add_systems(FixedUpdate, (Physics::gethitbox,Physics::physloop,Physics::input,Physics::guntimer)
-        .run_if(in_state(GameState::InGame)));
+        app.add_systems(FixedUpdate, (
+            Physics::gethitbox,
+            Physics::physloop,
+            Physics::input,
+            Physics::guntimer).run_if(in_state(GameState::InGame)));
+        
+        
+        
         app.init_resource::<enemylogic::Firingtimer>();
         app.add_event::<enemylogic::EnemyShoot>();
         app.add_event::<enemylogic::AttackType>();
         app.init_resource::<enemylogic::RotationCount>();
-        app.add_systems(FixedUpdate, (enemylogic::despawnprojectile,enemylogic::movementpattern,enemylogic::attackreg, enemylogic::reader, enemylogic::projectilespawner).run_if(in_state(GameState::InGame)));
+
+
+        app.add_systems(FixedUpdate, (
+            enemylogic::despawnprojectile,
+            enemylogic::movementpattern,
+            enemylogic::attackreg, 
+            enemylogic::reader, 
+            enemylogic::projectilespawner).run_if(in_state(GameState::InGame)));
         //Runs the main Game schedule using fixed update to improve jitteryness
+
+
+
     }
 }
 

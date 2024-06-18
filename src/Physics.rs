@@ -159,17 +159,17 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>,mut pd:
 // Calculates hitbox and makes enemy kill you
 
 pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>, 
-    enemy: Query<&Transform, With<Enemyproj>>,mut pd:  ResMut<PlayerData>
-    ,time: Res<Time> ,mut player: Query<&mut Sprite, With<Refplayer>>, slowcheck: Res<Slowdown> ){
+    enemy: Query<(&Transform, Entity), With<Enemyproj>>,mut pd:  ResMut<PlayerData>
+    ,time: Res<Time> ,mut player: Query<&mut Sprite, With<Refplayer>>, slowcheck: Res<Slowdown>, mut commands: Commands ){
 
-    let max:f32 = 100.0;
+    let max:f32 = 65.0;
 
     if !enemy.is_empty() && pd.iframes == false{
         for entity in enemy.iter(){
-            if (origin.single().translation().distance(entity.translation)).abs() <=  (ENEMYTESTPROJ + HITBOXRADIUS)/2. {
+            if (origin.single().translation().distance(entity.0.translation)).abs() <=  (ENEMYTESTPROJ + HITBOXRADIUS)/2. {
                 pd.lives -= 1; //Lose life code
                 pd.iframes = true;
-                
+                commands.entity(entity.1).despawn();
             }
         }
     }
@@ -203,15 +203,6 @@ pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>,
 
         
 
-        println!("{}, {}", 
-
-
-        (pd.flash.elapsed_secs()*300./slowcheck.rate).clamp(0.0, max/2.),
-        (pd.flash.elapsed_secs()*300./slowcheck.rate).clamp(max/2., max)
-
-        
-    
-    );
         
 
         
