@@ -2,12 +2,15 @@ use std::f32::consts::{self, PI};
 
 use bevy::asset::AssetServer;
 use bevy::math::Vec3;
-use bevy::prelude::{Component, Entity, NextState, With, Without};
+use bevy::prelude::{Camera2dBundle, Component, Entity, NextState, With, Without};
 use bevy::time::Stopwatch;
 use bevy::transform::components::Transform;
 use bevy::utils::default;
 
 use bevy::{input::ButtonInput, prelude::{Commands, Event, EventReader, EventWriter, KeyCode, Query, Res, ResMut, Resource}, render::texture::Image, sprite::{Sprite, SpriteBundle}, time::{Time, Timer}};
+
+
+
 
 use super::Physics;
 use super::StageEvent;
@@ -45,12 +48,18 @@ pub fn attackreg(mut firingevent: EventReader<EnemyShoot>, mut firingtype: Event
     
     
 }
-pub fn reader(mut sendev: EventWriter<EnemyShoot>, key:  Res<ButtonInput<KeyCode>>
-    , mut change_state: ResMut<NextState<StageEvent::GameState>>){
+pub fn reader(mut sendev: EventWriter<EnemyShoot>, key:  Res<ButtonInput<KeyCode>>){
     if key.just_pressed(KeyCode::KeyK){
         sendev.send(EnemyShoot(1));
-        change_state.set(StageEvent::GameState::MainMenu);
 
+
+    }
+
+}
+
+pub fn deload_all(mut cmd: Commands, query: Query<Entity, (With<Physics::MainCamera>, With<Physics::Refplayerproj>, With<Physics::Refplayer>, With<Physics::Enemyproj>)>){
+    for item in query.iter(){
+        cmd.entity(item).despawn();
     }
 }
 pub fn projectilespawner(slow: Res<Physics::Slowdown>,mut rotation: ResMut<RotationCount>,mut cmd: Commands, mut timer: ResMut<Firingtimer>, time: Res<Time>, mut attacktype: EventReader<AttackType>,asset_server: Res<AssetServer>){
@@ -107,9 +116,7 @@ pub fn despawnprojectile(mut cmd: Commands,mut projectilequery: Query<(&mut Tran
         for x in projectilequery.iter_mut(){
             if [x.0.translation.x, x.0.translation.y] >= [screen.single().physical_width() as f32/2. + Physics::ENEMYTESTPROJ ,screen.single().physical_height() as f32/2. + Physics::ENEMYTESTPROJ] 
             ||[x.0.translation.x, x.0.translation.y] <= [screen.single().physical_width() as f32/-2. - Physics::ENEMYTESTPROJ,screen.single().physical_height() as f32/-2. - Physics::ENEMYTESTPROJ]{
-
                 cmd.entity(x.1).despawn();
-
             }
         }
     }

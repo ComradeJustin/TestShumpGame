@@ -1,5 +1,5 @@
 
-use bevy::{app::{App, First, FixedUpdate, Last, Plugin, PluginGroup, PostStartup, PostUpdate, PreUpdate, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{query::With, schedule::{common_conditions::{in_state, resource_equals}, IntoSystemConfigs, IntoSystemSetConfigs, OnEnter, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, prelude::default, render::{camera::OrthographicProjection, color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, time::{Fixed, Time}, transform::{components::Transform, TransformSystem}, ui::update, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
+use bevy::{app::{App, First, FixedUpdate, Last, Plugin, PluginGroup, PostStartup, PostUpdate, PreUpdate, Startup, Update}, asset::Assets, core_pipeline::{bloom::BloomSettings, core_2d::Camera2dBundle}, ecs::{query::With, schedule::{common_conditions::{in_state, resource_equals}, IntoSystemConfigs, IntoSystemSetConfigs, OnEnter, SystemSet}, system::{Commands, NonSend, Query, ResMut}}, hierarchy::BuildChildren, prelude::default, render::{camera::OrthographicProjection, color::Color, mesh::Mesh, texture::ImagePlugin, view::window}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, text::{Text, Text2dBundle, TextSection, TextStyle}, time::{Fixed, Time}, transform::{components::Transform, TransformSystem}, ui::update, window::{EnabledButtons, PrimaryWindow, Window, WindowPlugin, WindowPosition, WindowResolution}, winit::WinitWindows, DefaultPlugins};
 
 
 use bevy_pixel_camera::{PixelCameraPlugin, PixelViewport, PixelZoom};
@@ -40,7 +40,7 @@ fn main() {
 
         .add_plugins(StartupPlugin)
         .add_plugins(MaingamePlugin)
-        
+        .add_plugins(CleanUpPlugin)
         .run(); // Runs the app
 
 
@@ -67,6 +67,12 @@ impl Plugin for StartupPlugin{
 
     }
 }
+struct CleanUpPlugin;
+impl Plugin for CleanUpPlugin{
+    fn build(&self, app: &mut App) {
+        app.add_systems(OnEnter(GameState::MainMenu), enemylogic::deload_all);
+    }
+}
 
 struct MaingamePlugin;
 impl Plugin for MaingamePlugin{
@@ -74,14 +80,15 @@ impl Plugin for MaingamePlugin{
 
         app.add_event::<Physics::PlayerVel>();
 
-        app.add_systems(OnEnter(GameState::InGame), spawnplayer); //Spawns player on entering states
+        app.add_systems(OnEnter(GameState::Loading), spawnplayer); //Spawns player on entering states
+        
         app.add_systems(FixedUpdate, 
             (
             Physics::gethitbox,
             Physics::physloop,
             Physics::input,
             Physics::guntimer
-            ).run_if(in_state(GameState::InGame)));
+            ).distributive_run_if(in_state(GameState::InGame)));
         
         
         
@@ -89,7 +96,7 @@ impl Plugin for MaingamePlugin{
         app.add_event::<enemylogic::EnemyShoot>();
         app.add_event::<enemylogic::AttackType>();
         app.init_resource::<enemylogic::RotationCount>();
-
+        app.add_systems(FixedUpdate, Physics::pauser);
 
         app.add_systems(FixedUpdate, 
             (
@@ -98,7 +105,7 @@ impl Plugin for MaingamePlugin{
             enemylogic::attackreg, 
             enemylogic::reader, 
             enemylogic::projectilespawner
-            ).run_if(in_state(GameState::InGame)));
+            ).distributive_run_if(in_state(GameState::InGame)));
         //Runs the main Game schedule using fixed update to improve jitteryness
 
 
@@ -119,7 +126,7 @@ fn make_visible(mut window: Query<&mut Window>) { //Temp, add loading screen.
 
 
 
-fn startup(mut commands: Commands, windows: Query<&Window>){
+fn startup(mut commands: Commands){
     
 
 
@@ -140,6 +147,7 @@ fn startup(mut commands: Commands, windows: Query<&Window>){
     };
     commands.spawn((
         cam,
+        Physics::MainCamera,
         PixelZoom::Fixed(1),
         PixelViewport,
     ));

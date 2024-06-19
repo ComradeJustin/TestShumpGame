@@ -2,13 +2,14 @@
 
 use std::path::PathBuf;
 
-use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, event::{Event, EventReader, EventWriter}, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, log::debug, math::Vec3, prelude::default, reflect::Reflect, render::{color::Color, mesh::Mesh, texture::Image}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::{Stopwatch, Time}, transform::components::{GlobalTransform, Transform}, window::Window};
+use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, event::{Event, EventReader, EventWriter}, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, log::debug, math::Vec3, prelude::{default, NextState, State}, reflect::Reflect, render::{color::Color, mesh::Mesh, texture::Image}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::{Stopwatch, Time}, transform::components::{GlobalTransform, Transform}, window::Window};
 
 
 
+use super::StageEvent;
 
-
-
+#[derive(bevy::ecs::component::Component, Default)]
+pub struct MainCamera;
 #[derive(bevy::ecs::component::Component)]
 pub struct PlayerhitboxComp;
 #[derive(bevy::ecs::component::Component)]
@@ -115,6 +116,20 @@ pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Comm
 
 }
 
+pub fn pauser(mut change_state: ResMut<NextState<StageEvent::GameState>>, key:  Res<ButtonInput<KeyCode>>){
+  
+    
+    if key.just_pressed(KeyCode::Escape){
+
+
+        change_state.set(StageEvent::GameState::Paused);
+        
+
+    }
+
+    
+    
+}
 
 
 
@@ -125,7 +140,7 @@ pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Comm
 
 
 //initialize spawning player
-pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>,mut pd: ResMut<PlayerData>){
+pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>,mut pd: ResMut<PlayerData>, mut change_state: ResMut<NextState<StageEvent::GameState>>){
     pd.lives = 3;
     pd.power = 0.0;
     pd.points = 0;
@@ -149,7 +164,7 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>,mut pd:
             , ..Default::default()},Refplayer))
             .add_child(x);
     
-    
+    change_state.set(StageEvent::GameState::InGame);
     
 
 }
@@ -273,6 +288,9 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
 
         playerpos.translation = playerpos.translation.round();  //Pixel perfect movement, as 1 unit in game is 1 unit in screen
+
+
+
         if slowcheck.truefalsechecker == true{
             slowcheck.count = slowcheck.count/5.0
         }
@@ -427,11 +445,11 @@ pub fn input(key:  Res<ButtonInput<KeyCode>>,mut query: Query<&mut Transform, Wi
 
 
 
-#[derive(bevy::ecs::component::Component)]
+#[derive(bevy::ecs::component::Component, Default)]
 pub struct Refplayer;
 
 
-#[derive(bevy::ecs::component::Component)]
+#[derive(bevy::ecs::component::Component, Default)]
 pub struct Refplayerproj;
 //Spawn projectile
 pub fn projectile(mut commands: Commands,asset_server: Res<AssetServer>, pos: Vec3, id: f32){

@@ -12,9 +12,11 @@ pub struct ChangeLevelEvent;
 
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum GameState {
-    LoadingScreen,
+    Loading,
     MainMenu,
     InGame,
+    Paused,
+    
 }
 
 
@@ -28,7 +30,7 @@ pub fn gamestatecheck(mut change_state: ResMut<NextState<GameState>> ,mut titles
    
     for item in interact.iter(){
         if *item == Interaction::Pressed{
-           change_state.set(GameState::InGame);
+           change_state.set(GameState::Loading);
            if !titlescreen.is_empty(){
             for item in titlescreen.iter_mut(){
                 command.entity(item).despawn()
