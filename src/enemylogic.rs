@@ -1,7 +1,7 @@
 use std::f32::consts::{self, PI};
 
 use bevy::asset::AssetServer;
-use bevy::math::Vec3;
+use bevy::math::{Quat, Vec3};
 use bevy::prelude::{Camera2dBundle, Component, Entity, NextState, With, Without};
 use bevy::time::Stopwatch;
 use bevy::transform::components::Transform;
@@ -87,7 +87,7 @@ pub fn projectilespawner(slow: Res<Physics::Slowdown>,mut rotation: ResMut<Rotat
            
             cmd.spawn(((SpriteBundle
                 {sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(Physics::ENEMYTESTPROJ,Physics::ENEMYTESTPROJ)), ..default()}
-                ,texture: asset_server.load::<Image>("embedded://Hitbox.png"),transform: Transform::from_xyz(0.0, 0.0, 1.0)  
+                ,texture: asset_server.load::<Image>("embedded://enemybullet.png"),transform: Transform::from_xyz(0.0, 0.0, 1.0)  
                 , ..Default::default()}),Physics::Enemyproj {bullettype: 1, id: timer.id , angle: rotation.angle  + rotation.shift }, Projectileref));
             timer.time.reset();
         }
@@ -102,10 +102,11 @@ pub fn movementpattern(mut projectilequery: Query<(&mut Transform, &Physics::Ene
     if !projectilequery.is_empty(){
 
         for mut pos in projectilequery.iter_mut(){
-
+           
             pos.0.translation.x = (pos.0.translation.x * 1000.0).round() /1000.0 ;
             pos.0.translation.y = (pos.0.translation.y * 1000.0).round() /1000.0 ;
             pos.0.translation += Vec3::new(pos.1.angle.cos() / slow.rate,pos.1.angle.sin() / slow.rate, 0.0);
+            pos.0.rotation = Quat::from_rotation_z((pos.1.angle.cos()+pos.1.angle.sin()).tan());
         }
     }
 

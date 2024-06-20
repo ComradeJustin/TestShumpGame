@@ -116,19 +116,20 @@ pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Comm
 
 }
 
-pub fn pauser(mut change_state: ResMut<NextState<StageEvent::GameState>>, key:  Res<ButtonInput<KeyCode>>){
+pub fn pauser(mut change_state: ResMut<NextState<StageEvent::GameState>>, key:  Res<ButtonInput<KeyCode>>, state: Res<State<StageEvent::GameState>>){
   
     
     if key.just_pressed(KeyCode::Escape){
 
 
-        change_state.set(StageEvent::GameState::Paused);
-        
+        match state.get(){
 
-    }
+            StageEvent::GameState::InGame =>  change_state.set(StageEvent::GameState::Paused),
+            StageEvent::GameState::Paused => change_state.set(StageEvent::GameState::InGame),
 
-    
-    
+            _ => panic!("Encountered an game state that does not exist")
+        }
+    }  
 }
 
 
@@ -159,8 +160,8 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>,mut pd:
         (
             SpriteBundle
             {sprite: Sprite{custom_size: Some(bevy::math::Vec2::new(PLAYERSPRITESIZE, PLAYERSPRITESIZE)), ..default()}
-            ,texture: asset_server.load::<Image>("embedded://OIP.png")
-            ,transform: Transform::from_xyz(0.0, 0.0, -1.0)
+            ,texture: asset_server.load::<Image>("embedded://player.png")
+            ,transform: Transform::from_xyz(0.0, -500., -1.0)
             , ..Default::default()},Refplayer))
             .add_child(x);
     
