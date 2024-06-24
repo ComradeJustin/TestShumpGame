@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use bevy::{asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, event::{Event, EventReader, EventWriter}, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, log::debug, math::Vec3, prelude::{default, NextState, State}, reflect::Reflect, render::{color::Color, mesh::Mesh, texture::Image}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::{Stopwatch, Time}, transform::components::{GlobalTransform, Transform}, window::Window};
+use bevy::{app::AppExit, asset::{AssetServer, Assets}, ecs::{component::Component, entity::Entity, event::{Event, EventReader, EventWriter}, query::{With, Without}, system::{Commands, Query, Res, ResMut, Resource}}, hierarchy::BuildChildren, input::{keyboard::KeyCode, ButtonInput}, log::debug, math::Vec3, prelude::{default, NextState, State}, reflect::Reflect, render::{color::Color, mesh::Mesh, texture::Image}, sprite::{MaterialMesh2dBundle, Mesh2dHandle, Sprite, SpriteBundle}, time::{Stopwatch, Time}, transform::components::{GlobalTransform, Transform}, window::Window};
 
 
 
@@ -36,7 +36,7 @@ pub struct PlayerVel(pub f32);
 const PLAYERSPRITESIZE: f32 = 32.0;
 const FIRERATE: f32 = 0.13;
 const VELO:f32 = 2.0;
-const HITBOXRADIUS:f32 = 10.0;
+const HITBOXRADIUS:f32 = 12.0;
 pub const ENEMYTESTPROJ:f32 = 24.0;
 #[derive(Resource, Default)]
 pub struct Slowdown{
@@ -101,7 +101,7 @@ pub fn guntimer(mut counter: ResMut<Shotcounter>, time: Res<Time>,commands: Comm
     let mut pos = x.single().translation.round();
     if counter.timesincelastshot + FIRERATE * slow.rate  <= time.elapsed_seconds_wrapped() {//Fire rate added  with delay
         counter.timesincelastshot = time.elapsed_seconds_wrapped();
-        pos.y = PLAYERSPRITESIZE/2. + pos.y + 2.0;
+        pos.y = pos.y + 2.0 - PLAYERSPRITESIZE/2. ;
         pos.z = x.single().translation.z - 10.0;
         if !ev_veloread.is_empty(){
 
@@ -176,9 +176,10 @@ pub fn spawnplayer(mut commands: Commands,asset_server: Res<AssetServer>,mut pd:
 
 pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>, 
     enemy: Query<(&Transform, Entity), With<Enemyproj>>,mut pd:  ResMut<PlayerData>
-    ,time: Res<Time> ,mut player: Query<&mut Sprite, With<Refplayer>>, slowcheck: Res<Slowdown>, mut commands: Commands ){
+    ,time: Res<Time> ,mut player: Query<&mut Sprite, With<Refplayer>>, slowcheck: Res<Slowdown>, mut commands: Commands, mut exit: EventWriter<AppExit> ){
 
     let max:f32 = 65.0;
+
 
     if !enemy.is_empty() && pd.iframes == false{
         for entity in enemy.iter(){
@@ -233,6 +234,14 @@ pub fn gethitbox(origin: Query<&GlobalTransform, With<PlayerhitboxComp>>,
             player.single_mut().color.set_b(1.0);
             player.single_mut().color.set_a(1.0);
         }
+    }
+    if pd.lives <= 0{
+
+
+
+
+        exit.send(AppExit::default());
+
     }
    
 }
@@ -457,14 +466,14 @@ pub fn projectile(mut commands: Commands,asset_server: Res<AssetServer>, pos: Ve
     let path = "embedded://R.png" ; 
 
     //Give Individual ID to each single projectile based on 3 states: And then Compensate doppler effect based on that 
-    commands.spawn((SpriteBundle{texture: asset_server.load::<Image>(path),transform: Transform::from_xyz(pos.x - PLAYERSPRITESIZE/3., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.)), ..Default::default()}},..Default::default()}
+    commands.spawn((SpriteBundle{texture: asset_server.load::<Image>(path),transform: Transform::from_xyz(pos.x - PLAYERSPRITESIZE/3., pos.y, pos.z), sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(HITBOXRADIUS, HITBOXRADIUS)), ..Default::default()}},..Default::default()}
     ,Refplayerproj, ProjectileSpeedDir{speedfactor: id}));
     
     commands.spawn(
         (SpriteBundle
             {texture: asset_server.load::<Image>(path)
             ,transform: Transform::from_xyz(pos.x + PLAYERSPRITESIZE/3., pos.y, pos.z)
-            , sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(8., 8.))
+            , sprite:{Sprite{custom_size: Some(bevy::math::Vec2::new(HITBOXRADIUS, HITBOXRADIUS))
             , ..Default::default()}}
             ,..Default::default()},Refplayerproj,ProjectileSpeedDir{speedfactor: id }));
 
