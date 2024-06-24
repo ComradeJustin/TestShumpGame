@@ -106,7 +106,7 @@ pub fn movementpattern(mut projectilequery: Query<(&mut Transform, &Physics::Ene
             pos.0.translation.x = (pos.0.translation.x * 1000.0).round() /1000.0 ;
             pos.0.translation.y = (pos.0.translation.y * 1000.0).round() /1000.0 ;
             pos.0.translation += Vec3::new(pos.1.angle.cos() / slow.rate,pos.1.angle.sin() / slow.rate, 0.0);
-            pos.0.rotation = Quat::from_rotation_z((pos.1.angle.cos()+pos.1.angle.sin()).tan());
+            pos.0.rotation = Quat::from_rotation_z(pos.1.angle +consts::PI/2.);
         }
     }
 
